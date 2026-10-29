@@ -1,0 +1,83 @@
+{
+  "invoice_classic_usd.pdf": {
+    "client_email": "sb-vae2e53459652@personal.example.com",
+    "client_name": "Brightwave Labs",
+    "currency": "USD",
+    "due_date": "2026-11-30",
+    "total": 1650.0,
+    "items": [
+      {
+        "name": "Brand identity design",
+        "quantity": 1,
+        "unit_price": 1200.0
+      },
+      {
+        "name": "Logo variations",
+        "quantity": 3,
+        "unit_price": 150.0
+      }
+    ]
+  },
+  "invoice_minimal_eur.pdf": {
+    "client_email": "sb-vae2e53459652@personal.example.com",
+    "client_name": "Maison Verte",
+    "currency": "EUR",
+    "due_date": "2026-12-03",
+    "total": 1100.0,
+    "items": [
+      {
+        "name": "Photography session",
+        "quantity": 1,
+        "unit_price": 800.0
+      },
+      {
+        "name": "Photo retouching",
+        "quantity": 12,
+        "unit_price": 25.0
+      }
+    ]
+  },
+  "invoice_consulting_gbp.pdf": {
+    "client_email": "sb-vae2e53459652@personal.example.com",
+    "client_name": "Fenwick Retail Group",
+    "currency": "GBP",
+    "due_date": "2026-11-20",
+    "total": 2175.5,
+    "items": [
+      {
+        "name": "Data audit",
+        "quantity": 2,
+        "unit_price": 450.0
+      },
+      {
+        "name": "Dashboard setup",
+        "quantity": 1,
+        "unit_price": 975.5
+      },
+      {
+        "name": "Training workshop",
+        "quantity": 1,
+        "unit_price": 300.0
+      }
+    ]
+  },
+  "receipt_style_usd.pdf": {
+    "client_email": "sb-vae2e53459652@personal.example.com",
+    "client_name": "Oakline Events",
+    "currency": "USD",
+    "due_date": null,
+    "total": 224.8,
+    "items": [
+      {
+        "name": "Poster printing A2",
+        "quantity": 10,
+        "unit_price": 14.5
+      },
+      {
+        "name": "Banner 2x1m",
+        "quantity": 2,
+        "unit_price": 39.9
+      }
+    ]
+  }
+}
