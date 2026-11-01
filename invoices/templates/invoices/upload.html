@@ -1,0 +1,31 @@
+{% extends "invoices/base.html" %}
+{% block content %}
+<div class="card">
+  <h1>Turn a document into an invoice</h1>
+  <p class="muted">Upload a PDF invoice or receipt. BillPilot reads it, extracts the details, and lets you review before anything is sent.</p>
+  {% if form.non_field_errors %}<div class="alert err">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  {% if form.file.errors %}<div class="alert err">{{ form.file.errors|join:" " }}</div>{% endif %}
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <p><input type="file" name="file" accept="application/pdf" required></p>
+    <button class="btn" type="submit">Extract details</button>
+    <span class="muted" style="margin-left:10px">This can take a few seconds.</span>
+  </form>
+</div>
+{% if recent %}
+<div class="card">
+  <h2>Recent</h2>
+  <table>
+    <tr><th>#</th><th>Client</th><th class="num">Total</th><th>Status</th></tr>
+    {% for inv in recent %}
+    <tr>
+      <td><a href="{% url 'invoice_detail' inv.pk %}">{{ inv.pk }}</a></td>
+      <td>{{ inv.client_name|default:inv.client_email }}</td>
+      <td class="num">{{ inv.currency }} {{ inv.total|floatformat:2 }}</td>
+      <td><span class="badge {{ inv.state }}">{{ inv.get_state_display }}</span></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+{% endblock %}

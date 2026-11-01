@@ -1,0 +1,24 @@
+{% extends "invoices/base.html" %}
+{% block title %}Invoices · BillPilot{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Invoices</h1>
+  {% if invoices %}
+  <table>
+    <tr><th>#</th><th>Client</th><th>Source</th><th class="num">Total</th><th>State</th><th>PayPal status</th></tr>
+    {% for inv in invoices %}
+    <tr>
+      <td><a href="{% url 'invoice_detail' inv.pk %}">{{ inv.pk }}</a></td>
+      <td>{{ inv.client_name|default:inv.client_email }}</td>
+      <td class="muted">{{ inv.original_name }}</td>
+      <td class="num">{{ inv.currency }} {{ inv.total|floatformat:2 }}</td>
+      <td><span class="badge {{ inv.state }}">{{ inv.get_state_display }}</span></td>
+      <td>{{ inv.paypal_status|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">Nothing yet. <a href="{% url 'upload' %}">Upload a document</a> to get started.</p>
+  {% endif %}
+</div>
+{% endblock %}

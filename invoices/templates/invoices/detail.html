@@ -1,0 +1,31 @@
+{% extends "invoices/base.html" %}
+{% block title %}Invoice #{{ invoice.pk }} · BillPilot{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Invoice #{{ invoice.pk }} <span class="badge {{ invoice.state }}">{{ invoice.get_state_display }}</span></h1>
+  <p class="muted">Extracted from <a href="{{ invoice.source_file.url }}">{{ invoice.original_name }}</a> ({{ invoice.ocr_method }} text)</p>
+  {% for w in invoice.warnings %}<div class="alert warn">{{ w }}</div>{% endfor %}
+  <dl>
+    <dt>Client</dt><dd>{{ invoice.client_name|default:"—" }}</dd>
+    <dt>Client email</dt><dd>{{ invoice.client_email }}</dd>
+    <dt>Currency</dt><dd>{{ invoice.currency }}</dd>
+    <dt>Due date</dt><dd>{{ invoice.due_date|default:"—" }}</dd>
+    <dt>Note</dt><dd>{{ invoice.note|default:"—" }}</dd>
+  </dl>
+</div>
+<div class="card">
+  <h2>Line items</h2>
+  <table>
+    <tr><th>Description</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Amount</th></tr>
+    {% for item in invoice.items.all %}
+    <tr>
+      <td>{{ item.name }}</td>
+      <td class="num">{{ item.quantity|floatformat:"-2" }}</td>
+      <td class="num">{{ item.unit_price|floatformat:2 }}</td>
+      <td class="num">{{ item.amount|floatformat:2 }}</td>
+    </tr>
+    {% endfor %}
+    <tr><th colspan="3" class="num">Total</th><th class="num">{{ invoice.currency }} {{ invoice.total|floatformat:2 }}</th></tr>
+  </table>
+</div>
+{% endblock %}

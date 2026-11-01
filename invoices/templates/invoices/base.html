@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}BillPilot{% endblock %}</title>
+  <style>
+    :root { --bg:#f6f7f9; --card:#fff; --text:#1d2433; --muted:#667085; --line:#e4e7ec; --brand:#0b5bd3; --warn:#b54708; --warnbg:#fffaeb; --err:#b42318; --errbg:#fef3f2; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+    header { background:var(--card); border-bottom:1px solid var(--line); }
+    nav { max-width:880px; margin:0 auto; padding:14px 20px; display:flex; gap:20px; align-items:center; }
+    nav .brand { font-weight:700; font-size:18px; margin-right:auto; color:var(--text); text-decoration:none; }
+    nav a { color:var(--muted); text-decoration:none; }
+    nav a:hover { color:var(--brand); }
+    main { max-width:880px; margin:28px auto; padding:0 20px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:24px; margin-bottom:20px; }
+    h1 { font-size:22px; margin:0 0 6px; } h2 { font-size:17px; margin:0 0 12px; }
+    .muted { color:var(--muted); }
+    table { width:100%; border-collapse:collapse; }
+    th, td { text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); }
+    th { font-size:13px; color:var(--muted); font-weight:600; }
+    td.num, th.num { text-align:right; }
+    .btn { display:inline-block; background:var(--brand); color:#fff; border:0; border-radius:8px; padding:10px 18px; font-size:15px; cursor:pointer; text-decoration:none; }
+    .alert { border-radius:8px; padding:10px 14px; margin-bottom:14px; }
+    .alert.warn { background:var(--warnbg); color:var(--warn); border:1px solid #fedf89; }
+    .alert.err { background:var(--errbg); color:var(--err); border:1px solid #fecdca; }
+    .badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:600; background:#eef2f6; color:#344054; }
+    .badge.sent { background:#e0f2fe; color:#075985; } .badge.paid { background:#dcfae6; color:#067647; } .badge.failed { background:var(--errbg); color:var(--err); }
+    dl { display:grid; grid-template-columns:140px 1fr; gap:6px 12px; margin:0; } dt { color:var(--muted); } dd { margin:0; }
+  </style>
+</head>
+<body>
+  <header><nav>
+    <a class="brand" href="{% url 'upload' %}">BillPilot</a>
+    <a href="{% url 'upload' %}">Upload</a>
+    <a href="{% url 'invoice_list' %}">Invoices</a>
+  </nav></header>
+  <main>{% block content %}{% endblock %}</main>
+</body>
+</html>
