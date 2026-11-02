@@ -1,0 +1,90 @@
+{% extends "invoices/base.html" %}
+{% block title %}Review invoice #{{ invoice.pk }} · BillPilot{% endblock %}
+{% block content %}
+<style>
+  .field { margin-bottom:14px; }
+  .field label { display:block; font-size:13px; color:var(--muted); margin-bottom:4px; }
+  input[type=text], input[type=email], input[type=date], input[type=number], textarea {
+    width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; font:inherit; background:#fff; color:var(--text);
+  }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 16px; }
+  .errorlist { list-style:none; margin:4px 0 0; padding:0; color:var(--err); font-size:13px; }
+  .help { font-size:12px; color:var(--muted); }
+  .items td { padding:6px 4px; vertical-align:top; border-bottom:0; }
+  .items th { border-bottom:1px solid var(--line); }
+  .btn.secondary { background:#eef2f6; color:#344054; }
+  .alert.ok { background:#ecfdf3; color:#067647; border:1px solid #abefc6; }
+  @media (max-width:640px) { .grid2 { grid-template-columns:1fr; } }
+</style>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="card">
+    <h1>Review invoice #{{ invoice.pk }}</h1>
+    <p class="muted">Check the details extracted from <a href="{{ invoice.source_file.url }}" target="_blank">{{ invoice.original_name }}</a> and fix anything that looks wrong.</p>
+    {% for m in messages %}<div class="alert ok">{{ m }}</div>{% endfor %}
+    {% for w in invoice.warnings %}<div class="alert warn">{{ w }}</div>{% endfor %}
+    {% if form.non_field_errors %}<div class="alert err">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+
+    <div class="grid2">
+      {% for f in form %}
+      <div class="field" {% if f.name == "note" %}style="grid-column:1 / -1"{% endif %}>
+        <label for="{{ f.id_for_label }}">{{ f.label }}</label>
+        {{ f }}
+        {% if f.help_text %}<div class="help">{{ f.help_text }}</div>{% endif %}
+        {{ f.errors }}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Line items</h2>
+    {{ formset.management_form }}
+    {% if formset.non_form_errors %}<div class="alert err">{{ formset.non_form_errors|join:" " }}</div>{% endif %}
+    <table class="items">
+      <thead><tr><th>Description</th><th style="width:110px">Qty</th><th style="width:130px">Unit price</th><th style="width:70px">Remove</th></tr></thead>
+      <tbody id="item-rows">
+        {% for item_form in formset %}
+        <tr class="item-row">
+          <td>{% for h in item_form.hidden_fields %}{{ h }}{% endfor %}{{ item_form.name }}{{ item_form.name.errors }}</td>
+          <td>{{ item_form.quantity }}{{ item_form.quantity.errors }}</td>
+          <td>{{ item_form.unit_price }}{{ item_form.unit_price.errors }}</td>
+          <td>{% if item_form.DELETE %}{{ item_form.DELETE }}{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p><button type="button" class="btn secondary" id="add-item">+ Add item</button></p>
+    <p class="muted">Current total: {{ invoice.currency }} {{ invoice.total|floatformat:2 }} (updates when you save)</p>
+  </div>
+
+  <button class="btn" type="submit">Save changes</button>
+  <a class="muted" style="margin-left:12px" href="{% url 'invoice_list' %}">Back to invoices</a>
+</form>
+
+<template id="empty-row">
+  <tr class="item-row">
+    <td>{% for h in formset.empty_form.hidden_fields %}{{ h }}{% endfor %}{{ formset.empty_form.name }}</td>
+    <td>{{ formset.empty_form.quantity }}</td>
+    <td>{{ formset.empty_form.unit_price }}</td>
+    <td></td>
+  </tr>
+</template>
+
+<script>
+  (function () {
+    var total = document.getElementById("id_items-TOTAL_FORMS");
+    var tbody = document.getElementById("item-rows");
+    var tpl = document.getElementById("empty-row");
+    document.getElementById("add-item").addEventListener("click", function () {
+      var index = parseInt(total.value, 10);
+      var html = tpl.innerHTML.replace(/__prefix__/g, index);
+      tbody.insertAdjacentHTML("beforeend", html);
+      total.value = index + 1;
+      var qty = tbody.querySelector("tr:last-child input[name$='-quantity']");
+      if (qty && !qty.value) qty.value = "1";
+    });
+  })();
+</script>
+{% endblock %}

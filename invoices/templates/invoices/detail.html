@@ -4,6 +4,7 @@
 <div class="card">
   <h1>Invoice #{{ invoice.pk }} <span class="badge {{ invoice.state }}">{{ invoice.get_state_display }}</span></h1>
   <p class="muted">Extracted from <a href="{{ invoice.source_file.url }}">{{ invoice.original_name }}</a> ({{ invoice.ocr_method }} text)</p>
+  {% if invoice.state == "review" %}<p><a class="btn" href="{% url 'invoice_review' invoice.pk %}">Review and edit</a></p>{% endif %}
   {% for w in invoice.warnings %}<div class="alert warn">{{ w }}</div>{% endfor %}
   <dl>
     <dt>Client</dt><dd>{{ invoice.client_name|default:"—" }}</dd>
