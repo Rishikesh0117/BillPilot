@@ -111,6 +111,15 @@ def send_invoice(invoice_id):
     return _check(r, "send").json().get("href")
 
 
+def delete_invoice(invoice_id):
+    """Delete a DRAFT invoice (used to clean up when sending fails)."""
+    r = requests.delete(
+        f"{BASE}/v2/invoicing/invoices/{invoice_id}", headers=_headers(), timeout=TIMEOUT
+    )
+    _check(r, "delete")
+    return True
+
+
 def get_invoice(invoice_id):
     r = requests.get(
         f"{BASE}/v2/invoicing/invoices/{invoice_id}", headers=_headers(), timeout=TIMEOUT

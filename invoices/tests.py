@@ -1,11 +1,15 @@
 from pathlib import Path
+import json
 from unittest.mock import patch
+
+import requests
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from services.extraction import ExtractionError
+from services.paypal_client import PayPalError
 
 from .models import Invoice
 
@@ -156,3 +160,79 @@ class ReviewTests(TestCase):
         self.invoice.save()
         resp = self.client.get(self.url)
         self.assertRedirects(resp, reverse("invoice_detail", args=[self.invoice.pk]))
+
+
+INDIA_BODY = json.dumps({"name": "MEDIA_TYPE_NOT_ACCEPTABLE", "message": "x",
+                         "details": [{"issue": "INR_FOREIGN_CURRENCY_BLOCKED"}]})
+
+
+@override_settings(MEDIA_ROOT="/tmp/billpilot_test_media")
+class SendTests(TestCase):
+    setUp = ReviewTests.setUp
+    payload = ReviewTests.payload
+
+    def send(self, **extra):
+        data = self.payload(**extra)
+        data["action"] = "send"
+        return self.client.post(self.url, data, follow=True)
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_send_success(self, pp):
+        pp.create_invoice.return_value = "INV2-ABC"
+        pp.send_invoice.return_value = "https://sandbox.paypal.com/invoice/p/#INV2-ABC"
+        resp = self.send()
+        self.invoice.refresh_from_db()
+        self.assertEqual(self.invoice.state, Invoice.State.SENT)
+        self.assertEqual(self.invoice.paypal_invoice_id, "INV2-ABC")
+        self.assertEqual(self.invoice.payer_url, "https://sandbox.paypal.com/invoice/p/#INV2-ABC")
+        self.assertContains(resp, "Invoice sent to PayPal")
+        self.assertContains(resp, "View invoice as the customer")
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_edits_are_saved_before_sending(self, pp):
+        pp.create_invoice.return_value = "INV2-ABC"
+        pp.send_invoice.return_value = ""
+        self.send()
+        sent_data = pp.create_invoice.call_args[0][0]
+        self.assertEqual(sent_data["client_email"], "new@client.example.com")
+        self.assertEqual(sent_data["items"][0]["unit_price"], 1000.0)
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_india_error_is_friendly_and_draft_deleted(self, pp):
+        pp.create_invoice.return_value = "INV2-DRAFT"
+        pp.send_invoice.side_effect = PayPalError("send", 406, INDIA_BODY)
+        resp = self.send()
+        self.invoice.refresh_from_db()
+        self.assertEqual(self.invoice.state, Invoice.State.REVIEW)
+        self.assertEqual(self.invoice.paypal_invoice_id, "")
+        pp.delete_invoice.assert_called_once_with("INV2-DRAFT")
+        self.assertContains(resp, "customers in India")
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_network_error(self, pp):
+        pp.create_invoice.side_effect = requests.ConnectionError()
+        resp = self.send()
+        self.assertContains(resp, "Could not reach PayPal")
+        pp.delete_invoice.assert_not_called()
+        self.assertEqual(Invoice.objects.get().state, Invoice.State.REVIEW)
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_missing_credentials(self, pp):
+        pp.create_invoice.side_effect = KeyError("PAYPAL_CLIENT_ID")
+        resp = self.send()
+        self.assertContains(resp, "credentials are missing")
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_save_does_not_call_paypal(self, pp):
+        data = self.payload()
+        data["action"] = "save"
+        self.client.post(self.url, data)
+        pp.create_invoice.assert_not_called()
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_cannot_send_twice(self, pp):
+        pp.create_invoice.return_value = "INV2-ABC"
+        pp.send_invoice.return_value = ""
+        self.send()
+        self.send()
+        self.assertEqual(pp.create_invoice.call_count, 1)

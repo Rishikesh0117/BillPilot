@@ -1,6 +1,8 @@
 {% extends "invoices/base.html" %}
 {% block title %}Invoice #{{ invoice.pk }} · BillPilot{% endblock %}
 {% block content %}
+<style>.alert.ok { background:#ecfdf3; color:#067647; border:1px solid #abefc6; }</style>
+{% for m in messages %}<div class="alert ok">{{ m }}</div>{% endfor %}
 <div class="card">
   <h1>Invoice #{{ invoice.pk }} <span class="badge {{ invoice.state }}">{{ invoice.get_state_display }}</span></h1>
   <p class="muted">Extracted from <a href="{{ invoice.source_file.url }}">{{ invoice.original_name }}</a> ({{ invoice.ocr_method }} text)</p>
@@ -14,6 +16,16 @@
     <dt>Note</dt><dd>{{ invoice.note|default:"—" }}</dd>
   </dl>
 </div>
+{% if invoice.paypal_invoice_id %}
+<div class="card">
+  <h2>PayPal</h2>
+  <dl>
+    <dt>Invoice ID</dt><dd>{{ invoice.paypal_invoice_id }}</dd>
+    <dt>Status</dt><dd>{{ invoice.paypal_status|default:"—" }}</dd>
+    {% if invoice.payer_url %}<dt>Customer link</dt><dd><a href="{{ invoice.payer_url }}" target="_blank" rel="noopener">View invoice as the customer</a></dd>{% endif %}
+  </dl>
+</div>
+{% endif %}
 <div class="card">
   <h2>Line items</h2>
   <table>

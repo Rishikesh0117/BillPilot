@@ -22,7 +22,7 @@
   <div class="card">
     <h1>Review invoice #{{ invoice.pk }}</h1>
     <p class="muted">Check the details extracted from <a href="{{ invoice.source_file.url }}" target="_blank">{{ invoice.original_name }}</a> and fix anything that looks wrong.</p>
-    {% for m in messages %}<div class="alert ok">{{ m }}</div>{% endfor %}
+    {% for m in messages %}<div class="alert {% if m.tags == 'error' %}err{% else %}ok{% endif %}">{{ m }}</div>{% endfor %}
     {% for w in invoice.warnings %}<div class="alert warn">{{ w }}</div>{% endfor %}
     {% if form.non_field_errors %}<div class="alert err">{{ form.non_field_errors|join:" " }}</div>{% endif %}
 
@@ -59,7 +59,9 @@
     <p class="muted">Current total: {{ invoice.currency }} {{ invoice.total|floatformat:2 }} (updates when you save)</p>
   </div>
 
-  <button class="btn" type="submit">Save changes</button>
+  <button class="btn" type="submit" name="action" value="send" id="send-btn"
+    onclick="return confirm('Send this invoice to ' + document.getElementById('id_client_email').value + ' via PayPal?');">Approve and send to PayPal</button>
+  <button class="btn secondary" type="submit" name="action" value="save" style="margin-left:8px">Save changes</button>
   <a class="muted" style="margin-left:12px" href="{% url 'invoice_list' %}">Back to invoices</a>
 </form>
 
@@ -74,6 +76,12 @@
 
 <script>
   (function () {
+    var form = document.querySelector("form");
+    form.addEventListener("submit", function () {
+      setTimeout(function () {
+        form.querySelectorAll("button[type=submit]").forEach(function (b) { b.disabled = true; });
+      }, 0);
+    });
     var total = document.getElementById("id_items-TOTAL_FORMS");
     var tbody = document.getElementById("item-rows");
     var tpl = document.getElementById("empty-row");

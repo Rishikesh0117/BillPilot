@@ -7,7 +7,7 @@ from services.ocr import OCRError
 
 from .forms import InvoiceForm, LineItemFormSet, UploadForm
 from .models import Invoice
-from .pipeline import run_extraction
+from .pipeline import run_extraction, send_invoice_to_paypal
 
 
 def upload(request):
@@ -47,6 +47,12 @@ def invoice_review(request, pk):
         with transaction.atomic():
             form.save()
             formset.save()
+        if request.POST.get("action") == "send":
+            if send_invoice_to_paypal(invoice):
+                messages.success(request, "Invoice sent to PayPal.")
+                return redirect("invoice_detail", pk=pk)
+            messages.error(request, invoice.error_message)
+            return redirect("invoice_review", pk=pk)
         messages.success(request, "Changes saved.")
         return redirect("invoice_review", pk=pk)
     return render(request, "invoices/review.html", {"invoice": invoice, "form": form, "formset": formset})
