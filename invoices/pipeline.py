@@ -143,3 +143,26 @@ def refresh_open_invoices(limit=50):
             if "credentials" in result or "reach PayPal" in result:
                 break  # same problem will hit every invoice
     return checked, errors
+
+
+REMINDABLE_STATUSES = {"SENT", "UNPAID", "PARTIALLY_PAID"}
+
+
+def send_payment_reminder(invoice, note=None):
+    """Send a PayPal payment reminder. Returns (ok, message).
+
+    Checks the live status first so an invoice that has just been paid isn't nagged.
+    """
+    ok, result = refresh_status(invoice)
+    if not ok:
+        return False, result
+    if result not in REMINDABLE_STATUSES:
+        return False, f"No reminder sent: this invoice is {result}."
+    try:
+        if note:
+            paypal_client.send_reminder(invoice.paypal_invoice_id, note=note)
+        else:
+            paypal_client.send_reminder(invoice.paypal_invoice_id)
+    except (PayPalError, requests.RequestException, KeyError) as e:
+        return False, _paypal_failure_message(e)
+    return True, "Reminder sent to the customer."

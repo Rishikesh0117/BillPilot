@@ -301,3 +301,64 @@ class StatusRefreshTests(TestCase):
         inv = self.make_sent(status="PAID")
         self.assertContains(self.client.get(reverse("invoice_list")), "badge paid")
         self.assertContains(self.client.get(reverse("invoice_detail", args=[inv.pk])), "Refresh status from PayPal")
+
+
+@override_settings(MEDIA_ROOT="/tmp/billpilot_test_media")
+class ReminderTests(TestCase):
+    def make_sent(self, status="SENT"):
+        return Invoice.objects.create(
+            original_name="x.pdf", client_email="c@example.com", state=Invoice.State.SENT,
+            paypal_invoice_id="INV2-A", paypal_status=status,
+        )
+
+    def remind(self, inv, **data):
+        return self.client.post(reverse("invoice_remind", args=[inv.pk]), data, follow=True)
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_reminder_sent_for_unpaid(self, pp):
+        inv = self.make_sent()
+        pp.get_status.return_value = "SENT"
+        resp = self.remind(inv)
+        pp.send_reminder.assert_called_once_with("INV2-A")
+        self.assertContains(resp, "Reminder sent to the customer")
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_custom_note_is_passed_through(self, pp):
+        inv = self.make_sent()
+        pp.get_status.return_value = "SENT"
+        self.remind(inv, note="Due Friday, thanks!")
+        pp.send_reminder.assert_called_once_with("INV2-A", note="Due Friday, thanks!")
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_no_reminder_if_already_paid(self, pp):
+        inv = self.make_sent()
+        pp.get_status.return_value = "PAID"
+        resp = self.remind(inv)
+        pp.send_reminder.assert_not_called()
+        self.assertContains(resp, "No reminder sent: this invoice is PAID")
+        inv.refresh_from_db()
+        self.assertEqual(inv.paypal_status, "PAID")
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_paypal_error_is_shown(self, pp):
+        inv = self.make_sent()
+        pp.get_status.return_value = "SENT"
+        pp.send_reminder.side_effect = PayPalError("remind", 422, json.dumps({"message": "Too many reminders", "details": [{"issue": "REMINDER_LIMIT"}]}))
+        resp = self.remind(inv)
+        self.assertContains(resp, "Too many reminders")
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_unsent_invoice_cannot_be_reminded(self, pp):
+        inv = Invoice.objects.create(original_name="x.pdf")
+        resp = self.remind(inv)
+        self.assertContains(resp, "hasn&#x27;t been sent")
+        pp.send_reminder.assert_not_called()
+
+    def test_button_only_shown_when_unpaid(self):
+        unpaid, paid = self.make_sent("SENT"), self.make_sent("PAID")
+        self.assertContains(self.client.get(reverse("invoice_detail", args=[unpaid.pk])), "Send payment reminder")
+        self.assertNotContains(self.client.get(reverse("invoice_detail", args=[paid.pk])), "Send payment reminder")
+
+    def test_reminder_requires_post(self):
+        inv = self.make_sent()
+        self.assertEqual(self.client.get(reverse("invoice_remind", args=[inv.pk])).status_code, 405)

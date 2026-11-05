@@ -8,7 +8,14 @@ from services.ocr import OCRError
 
 from .forms import InvoiceForm, LineItemFormSet, UploadForm
 from .models import Invoice
-from .pipeline import refresh_open_invoices, refresh_status, run_extraction, send_invoice_to_paypal
+from .pipeline import (
+    REMINDABLE_STATUSES,
+    refresh_open_invoices,
+    refresh_status,
+    run_extraction,
+    send_invoice_to_paypal,
+    send_payment_reminder,
+)
 
 
 def upload(request):
@@ -34,7 +41,8 @@ def invoice_list(request):
 
 def invoice_detail(request, pk):
     invoice = get_object_or_404(Invoice.objects.prefetch_related("items"), pk=pk)
-    return render(request, "invoices/detail.html", {"invoice": invoice})
+    can_remind = invoice.paypal_status in REMINDABLE_STATUSES
+    return render(request, "invoices/detail.html", {"invoice": invoice, "can_remind": can_remind})
 
 
 def invoice_review(request, pk):
@@ -80,3 +88,12 @@ def invoice_refresh_all(request):
     for err in errors:
         messages.error(request, err)
     return redirect("invoice_list")
+
+
+@require_POST
+def invoice_remind(request, pk):
+    invoice = get_object_or_404(Invoice, pk=pk)
+    note = request.POST.get("note", "").strip()[:300] or None
+    ok, message = send_payment_reminder(invoice, note)
+    (messages.success if ok else messages.error)(request, message)
+    return redirect("invoice_detail", pk=pk)
