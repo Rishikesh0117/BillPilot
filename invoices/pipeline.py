@@ -55,9 +55,12 @@ def _friendly_paypal_error(e):
         err = json.loads(body)
         issue = (err.get("details") or [{}])[0].get("issue", "")
         message = err.get("message", "")
-        return f"PayPal rejected the invoice: {message} {('(' + issue + ')') if issue else ''}".strip()
-    except (ValueError, AttributeError, IndexError):
-        return f"PayPal request failed during {e.step} (HTTP {e.status})."
+        if message or issue:
+            detail = f"{message} ({issue})" if message and issue else (message or issue)
+            return f"PayPal returned an error: {detail}"
+    except (ValueError, AttributeError, IndexError, TypeError):
+        pass
+    return f"PayPal request failed during {e.step} (HTTP {e.status})."
 
 
 def _discard_draft(invoice_id):
@@ -97,3 +100,46 @@ def send_invoice_to_paypal(invoice):
         return True
     invoice.save(update_fields=["error_message"])
     return False
+
+
+FINAL_STATUSES = {"PAID", "MARKED_AS_PAID", "CANCELLED", "REFUNDED", "MARKED_AS_REFUNDED"}
+
+
+def _paypal_failure_message(exc):
+    if isinstance(exc, PayPalError):
+        return _friendly_paypal_error(exc)
+    if isinstance(exc, requests.RequestException):
+        return "Could not reach PayPal. Check your internet connection and try again."
+    return "PayPal credentials are missing. Set PAYPAL_CLIENT_ID and PAYPAL_SECRET in .env."
+
+
+def refresh_status(invoice):
+    """Ask PayPal for the invoice's current status. Returns (ok, status_or_error_message)."""
+    if not invoice.paypal_invoice_id:
+        return False, "This invoice hasn't been sent to PayPal yet."
+    try:
+        status = paypal_client.get_status(invoice.paypal_invoice_id)
+    except (PayPalError, requests.RequestException, KeyError) as e:
+        return False, _paypal_failure_message(e)
+    if status != invoice.paypal_status:
+        invoice.paypal_status = status
+        invoice.save(update_fields=["paypal_status"])
+    return True, status
+
+
+def refresh_open_invoices(limit=50):
+    """Refresh every sent invoice that isn't in a final state. Returns (checked, errors)."""
+    open_invoices = (
+        Invoice.objects.exclude(paypal_invoice_id="")
+        .exclude(paypal_status__in=FINAL_STATUSES)[:limit]
+    )
+    checked, errors = 0, []
+    for invoice in open_invoices:
+        ok, result = refresh_status(invoice)
+        if ok:
+            checked += 1
+        else:
+            errors.append(f"#{invoice.pk}: {result}")
+            if "credentials" in result or "reach PayPal" in result:
+                break  # same problem will hit every invoice
+    return checked, errors

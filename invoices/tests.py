@@ -236,3 +236,68 @@ class SendTests(TestCase):
         self.send()
         self.send()
         self.assertEqual(pp.create_invoice.call_count, 1)
+
+
+@override_settings(MEDIA_ROOT="/tmp/billpilot_test_media")
+class StatusRefreshTests(TestCase):
+    def make_sent(self, paypal_id="INV2-A", status="SENT"):
+        return Invoice.objects.create(
+            original_name="x.pdf", client_email="c@example.com", state=Invoice.State.SENT,
+            paypal_invoice_id=paypal_id, paypal_status=status,
+        )
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_refresh_updates_status(self, pp):
+        inv = self.make_sent()
+        pp.get_status.return_value = "PAID"
+        resp = self.client.post(reverse("invoice_refresh", args=[inv.pk]), follow=True)
+        inv.refresh_from_db()
+        self.assertEqual(inv.paypal_status, "PAID")
+        self.assertContains(resp, "PayPal status: PAID")
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_refresh_error_shows_message(self, pp):
+        inv = self.make_sent()
+        pp.get_status.side_effect = PayPalError("get", 404, "{}")
+        resp = self.client.post(reverse("invoice_refresh", args=[inv.pk]), follow=True)
+        self.assertContains(resp, "HTTP 404")
+        inv.refresh_from_db()
+        self.assertEqual(inv.paypal_status, "SENT")
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_unsent_invoice_cannot_refresh(self, pp):
+        inv = Invoice.objects.create(original_name="x.pdf")
+        resp = self.client.post(reverse("invoice_refresh", args=[inv.pk]), follow=True)
+        self.assertContains(resp, "hasn&#x27;t been sent")
+        pp.get_status.assert_not_called()
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_refresh_all_skips_final_and_updates_open(self, pp):
+        open_inv = self.make_sent("INV2-OPEN", "SENT")
+        self.make_sent("INV2-DONE", "PAID")
+        Invoice.objects.create(original_name="draft.pdf")
+        pp.get_status.return_value = "PAID"
+        resp = self.client.post(reverse("invoice_refresh_all"), follow=True)
+        open_inv.refresh_from_db()
+        self.assertEqual(open_inv.paypal_status, "PAID")
+        pp.get_status.assert_called_once_with("INV2-OPEN")
+        self.assertContains(resp, "Checked 1 open invoice")
+
+    @patch("invoices.pipeline.paypal_client")
+    def test_refresh_all_stops_on_connection_problem(self, pp):
+        self.make_sent("INV2-1")
+        self.make_sent("INV2-2")
+        pp.get_status.side_effect = requests.ConnectionError()
+        resp = self.client.post(reverse("invoice_refresh_all"), follow=True)
+        self.assertEqual(pp.get_status.call_count, 1)
+        self.assertContains(resp, "Could not reach PayPal")
+
+    def test_refresh_requires_post(self):
+        inv = self.make_sent()
+        self.assertEqual(self.client.get(reverse("invoice_refresh", args=[inv.pk])).status_code, 405)
+        self.assertEqual(self.client.get(reverse("invoice_refresh_all")).status_code, 405)
+
+    def test_list_and_detail_render_status_badges(self):
+        inv = self.make_sent(status="PAID")
+        self.assertContains(self.client.get(reverse("invoice_list")), "badge paid")
+        self.assertContains(self.client.get(reverse("invoice_detail", args=[inv.pk])), "Refresh status from PayPal")

@@ -1,13 +1,14 @@
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from services.extraction import ExtractionError
 from services.ocr import OCRError
 
 from .forms import InvoiceForm, LineItemFormSet, UploadForm
 from .models import Invoice
-from .pipeline import run_extraction, send_invoice_to_paypal
+from .pipeline import refresh_open_invoices, refresh_status, run_extraction, send_invoice_to_paypal
 
 
 def upload(request):
@@ -56,3 +57,26 @@ def invoice_review(request, pk):
         messages.success(request, "Changes saved.")
         return redirect("invoice_review", pk=pk)
     return render(request, "invoices/review.html", {"invoice": invoice, "form": form, "formset": formset})
+
+
+@require_POST
+def invoice_refresh(request, pk):
+    invoice = get_object_or_404(Invoice, pk=pk)
+    ok, result = refresh_status(invoice)
+    if ok:
+        messages.success(request, f"PayPal status: {result}")
+    else:
+        messages.error(request, result)
+    return redirect("invoice_detail", pk=pk)
+
+
+@require_POST
+def invoice_refresh_all(request):
+    checked, errors = refresh_open_invoices()
+    if checked:
+        messages.success(request, f"Checked {checked} open invoice(s) with PayPal.")
+    elif not errors:
+        messages.success(request, "No open invoices to check.")
+    for err in errors:
+        messages.error(request, err)
+    return redirect("invoice_list")

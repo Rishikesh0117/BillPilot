@@ -21,7 +21,7 @@
   {% csrf_token %}
   <div class="card">
     <h1>Review invoice #{{ invoice.pk }}</h1>
-    <p class="muted">Check the details extracted from <a href="{{ invoice.source_file.url }}" target="_blank">{{ invoice.original_name }}</a> and fix anything that looks wrong.</p>
+    <p class="muted">Check the details extracted from {% if invoice.source_file %}<a href="{{ invoice.source_file.url }}" target="_blank">{{ invoice.original_name }}</a>{% else %}{{ invoice.original_name }}{% endif %} and fix anything that looks wrong.</p>
     {% for m in messages %}<div class="alert {% if m.tags == 'error' %}err{% else %}ok{% endif %}">{{ m }}</div>{% endfor %}
     {% for w in invoice.warnings %}<div class="alert warn">{{ w }}</div>{% endfor %}
     {% if form.non_field_errors %}<div class="alert err">{{ form.non_field_errors|join:" " }}</div>{% endif %}

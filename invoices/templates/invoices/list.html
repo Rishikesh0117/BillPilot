@@ -1,8 +1,15 @@
 {% extends "invoices/base.html" %}
 {% block title %}Invoices · BillPilot{% endblock %}
 {% block content %}
+<style>.alert.ok { background:#ecfdf3; color:#067647; border:1px solid #abefc6; }</style>
+{% for m in messages %}<div class="alert {% if m.tags == 'error' %}err{% else %}ok{% endif %}">{{ m }}</div>{% endfor %}
 <div class="card">
-  <h1>Invoices</h1>
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
+    <h1 style="margin:0">Invoices</h1>
+    <form method="post" action="{% url 'invoice_refresh_all' %}">{% csrf_token %}
+      <button class="btn" type="submit">Refresh statuses</button>
+    </form>
+  </div>
   {% if invoices %}
   <table>
     <tr><th>#</th><th>Client</th><th>Source</th><th class="num">Total</th><th>State</th><th>PayPal status</th></tr>
@@ -13,7 +20,7 @@
       <td class="muted">{{ inv.original_name }}</td>
       <td class="num">{{ inv.currency }} {{ inv.total|floatformat:2 }}</td>
       <td><span class="badge {{ inv.state }}">{{ inv.get_state_display }}</span></td>
-      <td>{{ inv.paypal_status|default:"—" }}</td>
+      <td>{% if inv.paypal_status %}<span class="badge {{ inv.paypal_status|lower }}">{{ inv.paypal_status }}</span>{% else %}—{% endif %}</td>
     </tr>
     {% endfor %}
   </table>
