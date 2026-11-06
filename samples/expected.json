@@ -79,5 +79,120 @@
         "unit_price": 39.9
       }
     ]
+  },
+  "invoice_tax_discount_usd.pdf": {
+    "client_email": "sb-vae2e53459652@personal.example.com",
+    "client_name": "Pinecrest Studio",
+    "currency": "USD",
+    "due_date": "2026-11-28",
+    "total": 243.0,
+    "items": [
+      {
+        "name": "Printer paper A4 (box)",
+        "quantity": 5,
+        "unit_price": 24.0
+      },
+      {
+        "name": "Ink cartridges",
+        "quantity": 4,
+        "unit_price": 32.5
+      }
+    ]
+  },
+  "quote_vendor_email_gbp.pdf": {
+    "client_email": "sb-vae2e53459652@personal.example.com",
+    "client_name": "Harlow Music Festival",
+    "currency": "GBP",
+    "due_date": "2026-11-30",
+    "total": 1020.0,
+    "items": [
+      {
+        "name": "Stage lighting hire",
+        "quantity": 3,
+        "unit_price": 220.0
+      },
+      {
+        "name": "Sound engineer (days)",
+        "quantity": 2,
+        "unit_price": 180.0
+      }
+    ]
+  },
+  "invoice_ordinal_date_eur.pdf": {
+    "client_email": "sb-vae2e53459652@personal.example.com",
+    "client_name": "Aroma Coffee House",
+    "currency": "EUR",
+    "due_date": null,
+    "total": 820.0,
+    "items": [
+      {
+        "name": "Menu design",
+        "quantity": 1,
+        "unit_price": 640.0
+      },
+      {
+        "name": "Window decals",
+        "quantity": 8,
+        "unit_price": 22.5
+      }
+    ]
+  },
+  "receipt_symbol_qty_usd.pdf": {
+    "client_email": "sb-vae2e53459652@personal.example.com",
+    "client_name": "Elm Street Dental",
+    "currency": "USD",
+    "due_date": "2026-11-27",
+    "total": 252.5,
+    "items": [
+      {
+        "name": "Labor (hours)",
+        "quantity": 2.5,
+        "unit_price": 85.0
+      },
+      {
+        "name": "Cable (meters)",
+        "quantity": 12.5,
+        "unit_price": 3.2
+      }
+    ]
+  },
+  "invoice_twopage_longdesc_usd.pdf": {
+    "client_email": "sb-vae2e53459652@personal.example.com",
+    "client_name": "Northgate Logistics",
+    "currency": "USD",
+    "due_date": "2026-11-15",
+    "total": 5184.75,
+    "items": [
+      {
+        "name": "Quarterly strategy review and roadmap planning session (includes stakeholder interviews)",
+        "quantity": 1,
+        "unit_price": 1500.0
+      },
+      {
+        "name": "Data migration",
+        "quantity": 1,
+        "unit_price": 900.0
+      },
+      {
+        "name": "API integration",
+        "quantity": 2,
+        "unit_price": 650.0
+      },
+      {
+        "name": "User training",
+        "quantity": 3,
+        "unit_price": 200.0
+      },
+      {
+        "name": "Support retainer (months)",
+        "quantity": 2,
+        "unit_price": 350.0
+      },
+      {
+        "name": "Travel expenses",
+        "quantity": 1,
+        "unit_price": 184.75
+      }
+    ]
   }
 }

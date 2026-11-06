@@ -9,7 +9,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from services.extraction import ExtractionError
+from services.extraction import ExtractionError, validate
 from services.paypal_client import PayPalError
 
 from .models import Invoice
@@ -449,3 +449,55 @@ class DeleteDraftTests(TestCase):
         )
         self.assertContains(self.client.get(reverse("invoice_detail", args=[review.pk])), "Delete draft")
         self.assertNotContains(self.client.get(reverse("invoice_detail", args=[sent.pk])), "Delete draft")
+
+
+class ExtractionValidateTests(TestCase):
+    def raw(self, **overrides):
+        payload = {
+            "client_email": "billing@client.example.com",
+            "client_name": "Client Co",
+            "currency": "USD",
+            "due_date": "2026-11-30",
+            "note": None,
+            "items": [{"name": "Design", "quantity": 1, "unit_price": 100.0}],
+            "total": 100.0,
+        }
+        payload.update(overrides)
+        return payload
+
+    def test_currency_symbol_maps_to_code(self):
+        for symbol, code in (("$", "USD"), ("€", "EUR"), ("£", "GBP")):
+            with self.subTest(symbol=symbol):
+                data, warnings = validate(self.raw(currency=symbol))
+                self.assertEqual(data["currency"], code)
+                self.assertEqual(warnings, [])
+
+    def test_currency_name_maps_to_code(self):
+        for name, code in (("euro", "EUR"), ("Dollars", "USD"), ("pounds", "GBP")):
+            with self.subTest(name=name):
+                data, _ = validate(self.raw(currency=name))
+                self.assertEqual(data["currency"], code)
+
+    def test_currency_code_passes_through(self):
+        data, warnings = validate(self.raw(currency="usd"))
+        self.assertEqual(data["currency"], "USD")
+        self.assertEqual(warnings, [])
+
+    def test_unknown_currency_defaults_to_usd_with_warning(self):
+        for value in ("???", "", None):
+            with self.subTest(value=value):
+                data, warnings = validate(self.raw(currency=value))
+                self.assertEqual(data["currency"], "USD")
+                self.assertTrue(any("defaulted to USD" in w for w in warnings))
+
+    def test_total_mismatch_keeps_items_and_warns(self):
+        # Tax/discount docs: items stay as extracted, the mismatch is flagged.
+        data, warnings = validate(self.raw(
+            items=[
+                {"name": "Paper", "quantity": 5, "unit_price": 24.0},
+                {"name": "Ink", "quantity": 4, "unit_price": 32.5},
+            ],
+            total=243.0,
+        ))
+        self.assertEqual(len(data["items"]), 2)
+        self.assertTrue(any("add up to" in w for w in warnings))

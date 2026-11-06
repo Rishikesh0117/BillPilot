@@ -22,6 +22,22 @@ from dotenv import load_dotenv
 load_dotenv()
 TIMEOUT = 90
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+CURRENCY_SYMBOLS = {"$": "USD", "US$": "USD", "€": "EUR", "£": "GBP", "¥": "JPY", "₹": "INR"}
+CURRENCY_NAMES = {
+    "dollar": "USD", "dollars": "USD", "euro": "EUR", "euros": "EUR",
+    "pound": "GBP", "pounds": "GBP", "sterling": "GBP",
+    "yen": "JPY", "rupee": "INR", "rupees": "INR",
+}
+
+
+def _normalize_currency(value):
+    """Map a currency symbol or name to an ISO code; "" when unrecognised."""
+    text = (value or "").strip()
+    if re.fullmatch(r"[A-Z]{3}", text.upper()):
+        return text.upper()
+    if text in CURRENCY_SYMBOLS:
+        return CURRENCY_SYMBOLS[text]
+    return CURRENCY_NAMES.get(text.lower(), "")
 
 SYSTEM_PROMPT = """You extract invoice data from text. Reply with ONLY one JSON object, no markdown, no commentary.
 
@@ -40,7 +56,7 @@ Rules:
 - unit_price is the price of ONE unit, not the line total. quantity defaults to 1 only if the document shows no quantity.
 - Numbers are plain numbers: no currency symbols, no thousands separators.
 - Never invent data. If a field is not in the text, use null (client_email and items are required: use "" and [] if missing).
-- Do not include tax, subtotal, or total lines as items."""
+- Do not include tax, discount, subtotal, shipping, or total lines as items."""
 
 
 class ExtractionError(Exception):
@@ -97,7 +113,7 @@ def validate(raw):
     if not EMAIL_RE.match(email):
         raise ExtractionError("No valid client email found in the document.")
 
-    currency = (raw.get("currency") or "").strip().upper()
+    currency = _normalize_currency(raw.get("currency"))
     if not re.fullmatch(r"[A-Z]{3}", currency):
         warnings.append("Currency not found; defaulted to USD.")
         currency = "USD"

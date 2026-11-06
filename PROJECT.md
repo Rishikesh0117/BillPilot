@@ -33,6 +33,13 @@ Django (SQLite for now), requests, python-dotenv, LLM with JSON output, open-sou
 - Scope: core flow first; chat layer only after the core works end to end.
 - Write OCR code fresh with open-source libraries; do not reuse CDSL internship code.
 - Demo with clean synthetic sample PDFs.
+- Tax/discount/subtotal lines are never imported as items (prompt rule); the "items do not add up to the document total" warning flags the gap for the reviewer.
+
+## Extraction eval
+- `python scripts/generate_samples.py` rebuilds the 9 sample PDFs + `samples/expected.json`.
+- `python scripts/eval_extraction.py [--model ID]` scores all samples; exits non-zero unless every document is perfect.
+- Latest live run (owner machine, Nov 6, default LLM_MODEL): 9/9 perfect (100%), 3.7s per document, 33s total. No failures, so no prompt/validate fixes were needed beyond the preventive ones already in.
+- Private real-document check: put PDFs + expected.json in `samples_private/` (gitignored, never commit) and run `python scripts/eval_extraction.py --samples-dir samples_private`.
 
 ## Status
 - [x] Sandbox app, invoicing scope, test invoice created, sent, paid, status read
@@ -44,6 +51,7 @@ Django (SQLite for now), requests, python-dotenv, LLM with JSON output, open-sou
 - [x] Status page
 - [x] Sample PDFs
 - [x] Part 1 polish: unified status, overdue badge, delete drafts, friendly copy (uncommitted)
+- [x] Part 2: 5 harder samples, eval upgrades, currency normalization (uncommitted; live eval 9/9 on owner machine)
 - [ ] Chat layer (optional)
 - [ ] Demo video, README, Devpost submission
 
