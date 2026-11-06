@@ -1,6 +1,10 @@
 from decimal import Decimal
 
 from django.db import models
+from django.utils import timezone
+
+
+FINAL_STATUSES = frozenset({"PAID", "MARKED_AS_PAID", "CANCELLED", "REFUNDED", "MARKED_AS_REFUNDED"})
 
 
 class Invoice(models.Model):
@@ -35,6 +39,44 @@ class Invoice(models.Model):
 
     def __str__(self):
         return f"Invoice #{self.pk} ({self.client_email or 'no client'})"
+
+    @property
+    def display_status(self):
+        """One coherent status for the list/detail pages, from state + PayPal status."""
+        if self.state == self.State.REVIEW:
+            return "Awaiting review"
+        if self.state == self.State.FAILED:
+            return "Send failed"
+        return {
+            "PAID": "Paid",
+            "MARKED_AS_PAID": "Paid",
+            "CANCELLED": "Cancelled",
+            "REFUNDED": "Refunded",
+            "MARKED_AS_REFUNDED": "Refunded",
+            "PARTIALLY_PAID": "Partially paid",
+            "PARTIALLY_REFUNDED": "Partially paid",
+        }.get(self.paypal_status, "Sent")
+
+    @property
+    def display_status_key(self):
+        """CSS-safe key for the display_status badge."""
+        return {
+            "Awaiting review": "review",
+            "Send failed": "failed",
+            "Paid": "paid",
+            "Cancelled": "cancelled",
+            "Refunded": "refunded",
+            "Partially paid": "partial",
+        }.get(self.display_status, "sent")
+
+    @property
+    def is_overdue(self):
+        """Sent, still unpaid, and past its due date."""
+        if self.state != self.State.SENT or not self.due_date:
+            return False
+        if self.paypal_status in FINAL_STATUSES:
+            return False
+        return self.due_date < timezone.localdate()
 
     @property
     def total(self):

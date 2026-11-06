@@ -65,6 +65,11 @@
   <a class="muted" style="margin-left:12px" href="{% url 'invoice_list' %}">Back to invoices</a>
 </form>
 
+<form method="post" action="{% url 'invoice_delete' invoice.pk %}" style="margin-top:16px" onsubmit="return confirm('Delete this draft? This cannot be undone.');">
+  {% csrf_token %}
+  <button class="btn danger" type="submit">Delete draft</button>
+</form>
+
 <template id="empty-row">
   <tr class="item-row">
     <td>{% for h in formset.empty_form.hidden_fields %}{{ h }}{% endfor %}{{ formset.empty_form.name }}</td>

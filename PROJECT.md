@@ -38,11 +38,12 @@ Django (SQLite for now), requests, python-dotenv, LLM with JSON output, open-sou
 - [x] Sandbox app, invoicing scope, test invoice created, sent, paid, status read
 - [x] Repo scaffold pushed to GitHub
 - [x] `services/paypal_client.py` written (untested in-app)
-- [ ] OCR
-- [ ] Extraction
-- [ ] Django upload / review / send views
-- [ ] Status page
-- [ ] Sample PDFs
+- [x] OCR
+- [x] Extraction
+- [x] Django upload / review / send views
+- [x] Status page
+- [x] Sample PDFs
+- [x] Part 1 polish: unified status, overdue badge, delete drafts, friendly copy (uncommitted)
 - [ ] Chat layer (optional)
 - [ ] Demo video, README, Devpost submission
 

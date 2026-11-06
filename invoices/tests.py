@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from pathlib import Path
 import json
 from unittest.mock import patch
@@ -300,7 +301,7 @@ class StatusRefreshTests(TestCase):
     def test_list_and_detail_render_status_badges(self):
         inv = self.make_sent(status="PAID")
         self.assertContains(self.client.get(reverse("invoice_list")), "badge paid")
-        self.assertContains(self.client.get(reverse("invoice_detail", args=[inv.pk])), "Refresh status from PayPal")
+        self.assertContains(self.client.get(reverse("invoice_detail", args=[inv.pk])), ">Refresh status<")
 
 
 @override_settings(MEDIA_ROOT="/tmp/billpilot_test_media")
@@ -362,3 +363,89 @@ class ReminderTests(TestCase):
     def test_reminder_requires_post(self):
         inv = self.make_sent()
         self.assertEqual(self.client.get(reverse("invoice_remind", args=[inv.pk])).status_code, 405)
+
+
+@override_settings(MEDIA_ROOT="/tmp/billpilot_test_media")
+class DisplayStatusTests(TestCase):
+    def make(self, state=Invoice.State.REVIEW, paypal_status="", due_date=None):
+        return Invoice.objects.create(
+            original_name="x.pdf", client_email="c@example.com",
+            state=state, paypal_status=paypal_status, due_date=due_date,
+        )
+
+    def test_review_state(self):
+        self.assertEqual(self.make().display_status, "Awaiting review")
+
+    def test_failed_state(self):
+        self.assertEqual(self.make(state=Invoice.State.FAILED).display_status, "Send failed")
+
+    def test_sent_maps_paypal_status(self):
+        cases = {
+            "SENT": "Sent", "UNPAID": "Sent", "": "Sent",
+            "PAID": "Paid", "MARKED_AS_PAID": "Paid",
+            "CANCELLED": "Cancelled",
+            "REFUNDED": "Refunded", "MARKED_AS_REFUNDED": "Refunded",
+            "PARTIALLY_PAID": "Partially paid",
+        }
+        for paypal_status, expected in cases.items():
+            with self.subTest(paypal_status=paypal_status):
+                inv = self.make(state=Invoice.State.SENT, paypal_status=paypal_status)
+                self.assertEqual(inv.display_status, expected)
+
+    def test_overdue_only_when_sent_unpaid_and_past_due(self):
+        past = date.today() - timedelta(days=1)
+        future = date.today() + timedelta(days=1)
+        self.assertTrue(self.make(state=Invoice.State.SENT, paypal_status="SENT", due_date=past).is_overdue)
+        self.assertFalse(self.make(state=Invoice.State.SENT, paypal_status="PAID", due_date=past).is_overdue)
+        self.assertFalse(self.make(state=Invoice.State.SENT, paypal_status="CANCELLED", due_date=past).is_overdue)
+        self.assertFalse(self.make(due_date=past).is_overdue)
+        self.assertFalse(self.make(state=Invoice.State.SENT, paypal_status="SENT", due_date=future).is_overdue)
+        self.assertFalse(self.make(state=Invoice.State.SENT, paypal_status="SENT").is_overdue)
+
+    def test_list_paid_invoice_does_not_say_sent(self):
+        self.make(state=Invoice.State.SENT, paypal_status="PAID")
+        resp = self.client.get(reverse("invoice_list"))
+        self.assertContains(resp, ">Paid<")
+        self.assertNotContains(resp, ">Sent<")
+
+    def test_list_shows_overdue_badge(self):
+        self.make(state=Invoice.State.SENT, paypal_status="SENT",
+                  due_date=date.today() - timedelta(days=1))
+        self.assertContains(self.client.get(reverse("invoice_list")), ">Overdue<")
+
+    def test_detail_shows_paid_status(self):
+        inv = self.make(state=Invoice.State.SENT, paypal_status="PAID")
+        resp = self.client.get(reverse("invoice_detail", args=[inv.pk]))
+        self.assertContains(resp, ">Paid<")
+
+
+@override_settings(MEDIA_ROOT="/tmp/billpilot_test_media")
+class DeleteDraftTests(TestCase):
+    def test_delete_review_invoice(self):
+        inv = Invoice.objects.create(original_name="x.pdf")
+        resp = self.client.post(reverse("invoice_delete", args=[inv.pk]))
+        self.assertRedirects(resp, reverse("invoice_list"))
+        self.assertEqual(Invoice.objects.count(), 0)
+
+    def test_cannot_delete_sent_invoice(self):
+        inv = Invoice.objects.create(
+            original_name="x.pdf", state=Invoice.State.SENT,
+            paypal_invoice_id="INV2-A", paypal_status="SENT",
+        )
+        resp = self.client.post(reverse("invoice_delete", args=[inv.pk]), follow=True)
+        self.assertEqual(Invoice.objects.count(), 1)
+        self.assertContains(resp, "Only invoices awaiting review can be deleted.")
+
+    def test_delete_requires_post(self):
+        inv = Invoice.objects.create(original_name="x.pdf")
+        self.assertEqual(self.client.get(reverse("invoice_delete", args=[inv.pk])).status_code, 405)
+        self.assertEqual(Invoice.objects.count(), 1)
+
+    def test_delete_button_only_for_review(self):
+        review = Invoice.objects.create(original_name="r.pdf")
+        sent = Invoice.objects.create(
+            original_name="s.pdf", state=Invoice.State.SENT,
+            paypal_invoice_id="INV2-A", paypal_status="SENT",
+        )
+        self.assertContains(self.client.get(reverse("invoice_detail", args=[review.pk])), "Delete draft")
+        self.assertNotContains(self.client.get(reverse("invoice_detail", args=[sent.pk])), "Delete draft")

@@ -91,6 +91,18 @@ def invoice_refresh_all(request):
 
 
 @require_POST
+def invoice_delete(request, pk):
+    invoice = get_object_or_404(Invoice, pk=pk)
+    if invoice.state != Invoice.State.REVIEW:
+        messages.error(request, "Only invoices awaiting review can be deleted.")
+        return redirect("invoice_detail", pk=pk)
+    invoice.source_file.delete(save=False)
+    invoice.delete()
+    messages.success(request, f"Draft invoice #{pk} deleted.")
+    return redirect("invoice_list")
+
+
+@require_POST
 def invoice_remind(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
     note = request.POST.get("note", "").strip()[:300] or None

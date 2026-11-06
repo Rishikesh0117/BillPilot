@@ -1,8 +1,9 @@
 {% extends "invoices/base.html" %}
+{% block title %}Upload · BillPilot{% endblock %}
 {% block content %}
 <div class="card">
   <h1>Turn a document into an invoice</h1>
-  <p class="muted">Upload a PDF invoice or receipt. BillPilot reads it, extracts the details, and lets you review before anything is sent.</p>
+  <p class="muted">BillPilot is built for freelancers and small agencies who receive work orders, quotes, and receipts as PDFs and lose hours turning them into invoices and chasing payment. Upload a document below — BillPilot reads it, extracts the details, and lets you review before anything is sent.</p>
   {% if form.non_field_errors %}<div class="alert err">{{ form.non_field_errors|join:" " }}</div>{% endif %}
   {% if form.file.errors %}<div class="alert err">{{ form.file.errors|join:" " }}</div>{% endif %}
   <form method="post" enctype="multipart/form-data">
@@ -22,10 +23,15 @@
       <td><a href="{% url 'invoice_detail' inv.pk %}">{{ inv.pk }}</a></td>
       <td>{{ inv.client_name|default:inv.client_email }}</td>
       <td class="num">{{ inv.currency }} {{ inv.total|floatformat:2 }}</td>
-      <td><span class="badge {{ inv.state }}">{{ inv.get_state_display }}</span></td>
+      <td><span class="badge {{ inv.display_status_key }}">{{ inv.display_status }}</span>{% if inv.is_overdue %} <span class="badge overdue">Overdue</span>{% endif %}</td>
     </tr>
     {% endfor %}
   </table>
+</div>
+{% else %}
+<div class="card">
+  <h2>How it works</h2>
+  <p class="muted">1. Upload a PDF quote, receipt, or work order.<br>2. Check the extracted details and fix anything that looks wrong.<br>3. Approve, and BillPilot sends the invoice via PayPal and tracks payment.</p>
 </div>
 {% endif %}
 {% endblock %}

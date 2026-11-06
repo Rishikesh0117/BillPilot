@@ -9,5 +9,6 @@ urlpatterns = [
     path("invoices/<int:pk>/review/", views.invoice_review, name="invoice_review"),
     path("invoices/<int:pk>/refresh/", views.invoice_refresh, name="invoice_refresh"),
     path("invoices/<int:pk>/remind/", views.invoice_remind, name="invoice_remind"),
+    path("invoices/<int:pk>/delete/", views.invoice_delete, name="invoice_delete"),
     path("invoices/refresh/", views.invoice_refresh_all, name="invoice_refresh_all"),
 ]

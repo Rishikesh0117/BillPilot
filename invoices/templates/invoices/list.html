@@ -7,25 +7,26 @@
   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
     <h1 style="margin:0">Invoices</h1>
     <form method="post" action="{% url 'invoice_refresh_all' %}">{% csrf_token %}
-      <button class="btn" type="submit">Refresh statuses</button>
+      <button class="btn" type="submit">Refresh all statuses</button>
     </form>
   </div>
+  <p class="muted">Every invoice in one place, from first upload to paid.</p>
   {% if invoices %}
   <table>
-    <tr><th>#</th><th>Client</th><th>Source</th><th class="num">Total</th><th>State</th><th>PayPal status</th></tr>
+    <tr><th>#</th><th>Client</th><th>Source</th><th class="num">Total</th><th>Status</th><th>Due</th></tr>
     {% for inv in invoices %}
     <tr>
       <td><a href="{% url 'invoice_detail' inv.pk %}">{{ inv.pk }}</a></td>
       <td>{{ inv.client_name|default:inv.client_email }}</td>
       <td class="muted">{{ inv.original_name }}</td>
       <td class="num">{{ inv.currency }} {{ inv.total|floatformat:2 }}</td>
-      <td><span class="badge {{ inv.state }}">{{ inv.get_state_display }}</span></td>
-      <td>{% if inv.paypal_status %}<span class="badge {{ inv.paypal_status|lower }}">{{ inv.paypal_status }}</span>{% else %}—{% endif %}</td>
+      <td><span class="badge {{ inv.display_status_key }}">{{ inv.display_status }}</span>{% if inv.is_overdue %} <span class="badge overdue">Overdue</span>{% endif %}</td>
+      <td class="muted">{{ inv.due_date|default:"—" }}</td>
     </tr>
     {% endfor %}
   </table>
   {% else %}
-  <p class="muted">Nothing yet. <a href="{% url 'upload' %}">Upload a document</a> to get started.</p>
+  <p>No invoices yet. If you receive work orders, quotes, or receipts as PDFs, <a href="{% url 'upload' %}">upload your first document</a> and BillPilot will read it and draft the invoice for you.</p>
   {% endif %}
 </div>
 {% endblock %}

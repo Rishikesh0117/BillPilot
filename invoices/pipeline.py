@@ -11,7 +11,7 @@ from services.extraction import extract_invoice
 from services.ocr import extract_text
 from services.paypal_client import PayPalError
 
-from .models import Invoice, LineItem
+from .models import FINAL_STATUSES, Invoice, LineItem
 
 
 def run_extraction(invoice):
@@ -102,7 +102,7 @@ def send_invoice_to_paypal(invoice):
     return False
 
 
-FINAL_STATUSES = {"PAID", "MARKED_AS_PAID", "CANCELLED", "REFUNDED", "MARKED_AS_REFUNDED"}
+# FINAL_STATUSES is defined in invoices.models and imported above.
 
 
 def _paypal_failure_message(exc):
