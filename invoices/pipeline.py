@@ -5,13 +5,14 @@ import json
 
 import requests
 from django.db import transaction
+from django.utils import timezone
 
 from services import paypal_client
 from services.extraction import extract_invoice
 from services.ocr import extract_text
 from services.paypal_client import PayPalError
 
-from .models import FINAL_STATUSES, Invoice, LineItem
+from .models import FINAL_STATUSES, Invoice, LineItem, PendingAction
 
 
 def run_extraction(invoice):
@@ -166,3 +167,50 @@ def send_payment_reminder(invoice, note=None):
     except (PayPalError, requests.RequestException, KeyError) as e:
         return False, _paypal_failure_message(e)
     return True, "Reminder sent to the customer."
+
+
+def execute_action(action):
+    """Execute an approved (or still-pending) proposal exactly once.
+
+    Returns (ok, message). Actions that already left the pending/approved states
+    are never executed again.
+    """
+    if action.status not in (PendingAction.Status.PENDING, PendingAction.Status.APPROVED):
+        return False, "This action was already handled."
+    handler = {"propose_reminder": _execute_reminder, "propose_send_invoice": _execute_send}.get(action.tool)
+    if handler is None:
+        action.status = PendingAction.Status.FAILED
+        action.result_message = f"Unknown action: {action.tool}."
+        action.decided_at = action.decided_at or timezone.now()
+        action.save()
+        return False, action.result_message
+    ok, message = handler(action)
+    action.status = PendingAction.Status.DONE if ok else PendingAction.Status.FAILED
+    action.result_message = message
+    action.decided_at = action.decided_at or timezone.now()
+    action.save()
+    return ok, message
+
+
+def _execute_reminder(action):
+    if not action.invoice_id:
+        return False, "This reminder has no invoice."
+    try:
+        invoice = Invoice.objects.get(pk=action.invoice_id)
+    except Invoice.DoesNotExist:
+        return False, "The invoice for this reminder no longer exists."
+    return send_payment_reminder(invoice, (action.args or {}).get("note"))
+
+
+def _execute_send(action):
+    if not action.invoice_id:
+        return False, "This action has no invoice."
+    try:
+        invoice = Invoice.objects.prefetch_related("items").get(pk=action.invoice_id)
+    except Invoice.DoesNotExist:
+        return False, "The invoice for this action no longer exists."
+    if invoice.state != Invoice.State.REVIEW:
+        return False, f"Invoice #{invoice.pk} is no longer awaiting review."
+    if send_invoice_to_paypal(invoice):
+        return True, "Invoice sent to PayPal."
+    return False, invoice.error_message or "Could not send the invoice."

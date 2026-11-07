@@ -101,6 +101,34 @@ class Invoice(models.Model):
         }
 
 
+class PendingAction(models.Model):
+    """A PayPal write the assistant proposed; executes only after human approval."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+        DONE = "done", "Done"
+        FAILED = "failed", "Failed"
+
+    tool = models.CharField(max_length=40)
+    invoice = models.ForeignKey(
+        Invoice, null=True, blank=True, on_delete=models.CASCADE, related_name="pending_actions"
+    )
+    args = models.JSONField(default=dict, blank=True)
+    summary = models.CharField(max_length=300)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    result_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    decided_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.tool} on invoice #{self.invoice_id} ({self.status})"
+
+
 class LineItem(models.Model):
     invoice = models.ForeignKey(Invoice, related_name="items", on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
