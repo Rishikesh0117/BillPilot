@@ -41,6 +41,10 @@ Django (SQLite for now), requests, python-dotenv, LLM with JSON output, open-sou
 - Latest live run (owner machine, Nov 6, default LLM_MODEL): 9/9 perfect (100%), 3.7s per document, 33s total. No failures, so no prompt/validate fixes were needed beyond the preventive ones already in.
 - Private real-document check: put PDFs + expected.json in `samples_private/` (gitignored, never commit) and run `python scripts/eval_extraction.py --samples-dir samples_private`.
 
+## Part 3 spikes (decided)
+- 3A decision: chat model is `openai/gpt-oss-120b` (well-formed `add` tool call on the spike; `google/gemma-3-27b-it` returned content only, no tool call). Set `CHAT_LLM_MODEL=openai/gpt-oss-120b` in .env; when unset it defaults to LLM_MODEL. Extraction stays on LLM_MODEL.
+- 3B decision: keep our own `paypal_client.py` for the agent tools. The official toolkit is Node-only and the owner does not want a Node sidecar; our client already covers create/send/status/remind/delete. (Spike script removed.)
+
 ## Status
 - [x] Sandbox app, invoicing scope, test invoice created, sent, paid, status read
 - [x] Repo scaffold pushed to GitHub
@@ -52,6 +56,7 @@ Django (SQLite for now), requests, python-dotenv, LLM with JSON output, open-sou
 - [x] Sample PDFs
 - [x] Part 1 polish: unified status, overdue badge, delete drafts, friendly copy (uncommitted)
 - [x] Part 2: 5 harder samples, eval upgrades, currency normalization (uncommitted; live eval 9/9 on owner machine)
+- [x] Part 3: chat model openai/gpt-oss-120b, keep paypal_client.py (uncommitted)
 - [ ] Chat layer (optional)
 - [ ] Demo video, README, Devpost submission
 
