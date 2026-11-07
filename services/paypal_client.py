@@ -132,7 +132,10 @@ def get_status(invoice_id):
     return get_invoice(invoice_id)["status"]
 
 
-def send_reminder(invoice_id, note="Friendly reminder: this invoice is still unpaid."):
+DEFAULT_REMINDER_NOTE = "Friendly reminder: this invoice is still unpaid."
+
+
+def send_reminder(invoice_id, note=DEFAULT_REMINDER_NOTE):
     r = requests.post(
         f"{BASE}/v2/invoicing/invoices/{invoice_id}/remind",
         json={"subject": "Payment reminder", "note": note, "send_to_recipient": True},

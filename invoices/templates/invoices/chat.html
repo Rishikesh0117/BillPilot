@@ -1,0 +1,107 @@
+{% extends "invoices/base.html" %}
+{% block title %}Assistant · BillPilot{% endblock %}
+{% block content %}
+<style>
+  .alert.ok { background:#ecfdf3; color:#067647; border:1px solid #abefc6; }
+  .btn.secondary { background:#eef2f6; color:#344054; }
+  .thread { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+  .msg { max-width:85%; padding:10px 14px; border-radius:12px; white-space:pre-wrap; }
+  .msg.user { align-self:flex-end; background:#e0f2fe; color:#0c4a6e; }
+  .msg.assistant { align-self:flex-start; background:#eef2f6; color:#1d2433; }
+  .suggest { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 16px; }
+  .suggest form { margin:0; }
+  textarea { width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; font:inherit; background:#fff; color:var(--text); }
+  .proposal { border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:12px; }
+  .proposal p { margin:6px 0; }
+  .proposal .actions { display:flex; gap:8px; margin-top:10px; }
+  .proposal .actions form { margin:0; }
+  .quote { background:#f6f7f9; border-radius:8px; padding:8px 12px; }
+</style>
+{% for m in messages %}<div class="alert {% if m.tags == 'error' %}err{% else %}ok{% endif %}">{{ m }}</div>{% endfor %}
+
+<div class="card">
+  <h1>Assistant</h1>
+  <p class="muted">Ask about your invoices. I can look things up and propose reminders — nothing is sent until you approve it below.</p>
+
+  {% if history %}
+  <div class="thread">
+    {% for m in history %}
+    <div class="msg {{ m.role }}">{{ m.content }}</div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="suggest">
+    <form method="post" action="{% url 'chat' %}">{% csrf_token %}
+      <input type="hidden" name="message" value="Who hasn't paid?">
+      <button class="btn secondary" type="submit">Who hasn't paid?</button>
+    </form>
+    <form method="post" action="{% url 'chat' %}">{% csrf_token %}
+      <input type="hidden" name="message" value="Which invoices are overdue?">
+      <button class="btn secondary" type="submit">Which invoices are overdue?</button>
+    </form>
+    <form method="post" action="{% url 'chat' %}">{% csrf_token %}
+      <input type="hidden" name="message" value="Remind overdue clients">
+      <button class="btn secondary" type="submit">Remind overdue clients</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <form method="post" action="{% url 'chat' %}" id="chat-form">
+    {% csrf_token %}
+    <p><textarea name="message" rows="2" maxlength="1000" required placeholder="Ask about your invoices…"></textarea></p>
+    <button class="btn" type="submit" id="send-btn">Send</button>
+  </form>
+</div>
+
+{% if last_decision %}
+<div class="card">
+  <h2>Result</h2>
+  <p>{{ last_decision.summary }}</p>
+  <p>
+    {% if last_decision.status == "done" %}<span class="badge paid">Done</span>
+    {% elif last_decision.status == "failed" %}<span class="badge failed">Failed</span>
+    {% elif last_decision.status == "rejected" %}<span class="badge cancelled">Rejected</span>
+    {% endif %}
+    {{ last_decision.result_message }}
+  </p>
+  {% if last_decision.invoice %}<p><a href="{% url 'invoice_detail' last_decision.invoice.pk %}">View invoice #{{ last_decision.invoice.pk }}</a></p>{% endif %}
+</div>
+{% endif %}
+
+{% if pending %}
+<div class="card">
+  <h2>Awaiting your approval ({{ pending|length }})</h2>
+  {% for action in pending %}
+  <div class="proposal">
+    <p><strong>{{ action.summary }}</strong></p>
+    {% if action.tool == "propose_reminder" %}
+    <p class="muted">Reminder text:</p>
+    <p class="quote">{{ action.args.note|default:default_reminder_note }}</p>
+    {% endif %}
+    {% if action.invoice %}<p><a href="{% url 'invoice_detail' action.invoice.pk %}">View invoice #{{ action.invoice.pk }}</a></p>{% endif %}
+    <div class="actions">
+      <form method="post" action="{% url 'action_approve' action.pk %}">{% csrf_token %}
+        <button class="btn" type="submit">Approve</button>
+      </form>
+      <form method="post" action="{% url 'action_reject' action.pk %}">{% csrf_token %}
+        <button class="btn secondary" type="submit">Reject</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<script>
+  document.querySelectorAll("form").forEach(function (form) {
+    form.addEventListener("submit", function () {
+      var btn = form.querySelector("button[type=submit]");
+      if (btn && form.id === "chat-form") {
+        setTimeout(function () { btn.disabled = true; btn.textContent = "Thinking…"; }, 0);
+      } else if (btn) {
+        setTimeout(function () { btn.disabled = true; }, 0);
+      }
+    });
+  });
+</script>
+{% endblock %}

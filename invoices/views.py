@@ -1,21 +1,28 @@
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from services.agent import AgentError, run_agent
 from services.extraction import ExtractionError
 from services.ocr import OCRError
+from services.paypal_client import DEFAULT_REMINDER_NOTE
 
 from .forms import InvoiceForm, LineItemFormSet, UploadForm
-from .models import Invoice
+from .models import Invoice, PendingAction
 from .pipeline import (
     REMINDABLE_STATUSES,
+    execute_action,
     refresh_open_invoices,
     refresh_status,
     run_extraction,
     send_invoice_to_paypal,
     send_payment_reminder,
 )
+
+CHAT_HISTORY_LIMIT = 20
+CHAT_MESSAGE_LIMIT = 1000
 
 
 def upload(request):
@@ -109,3 +116,82 @@ def invoice_remind(request, pk):
     ok, message = send_payment_reminder(invoice, note)
     (messages.success if ok else messages.error)(request, message)
     return redirect("invoice_detail", pk=pk)
+
+
+def _chat_history(request):
+    history = request.session.get("chat_history", [])
+    return [
+        m for m in history
+        if m.get("role") in ("user", "assistant") and isinstance(m.get("content"), str)
+    ][:CHAT_HISTORY_LIMIT]
+
+
+def chat(request):
+    if request.method == "POST":
+        message = (request.POST.get("message") or "").strip()[:CHAT_MESSAGE_LIMIT]
+        if not message:
+            messages.error(request, "Please type a message.")
+            return redirect("chat")
+        history = _chat_history(request)
+        try:
+            result = run_agent(history + [{"role": "user", "content": message}])
+        except AgentError as e:
+            messages.error(request, f"Assistant error: {e}")
+            return redirect("chat")
+        request.session["chat_history"] = (history + [
+            {"role": "user", "content": message},
+            {"role": "assistant", "content": result["message"]},
+        ])[-CHAT_HISTORY_LIMIT:]
+        if result["proposals"]:
+            messages.success(request, f"{len(result['proposals'])} proposal(s) created — review below.")
+        return redirect("chat")
+
+    pending = (
+        PendingAction.objects.filter(status=PendingAction.Status.PENDING)
+        .select_related("invoice")
+        .order_by("-created_at")
+    )
+    last_decision = None
+    if "last_decision" in request.session:
+        last_id = request.session.pop("last_decision")
+        request.session.modified = True
+        last_decision = PendingAction.objects.filter(pk=last_id).select_related("invoice").first()
+    return render(
+        request,
+        "invoices/chat.html",
+        {
+            "history": _chat_history(request),
+            "pending": pending,
+            "last_decision": last_decision,
+            "default_reminder_note": DEFAULT_REMINDER_NOTE,
+        },
+    )
+
+
+@require_POST
+def action_approve(request, pk):
+    action = get_object_or_404(PendingAction.objects.select_related("invoice"), pk=pk)
+    if action.status != PendingAction.Status.PENDING:
+        messages.error(request, "This proposal was already handled.")
+        return redirect("chat")
+    action.status = PendingAction.Status.APPROVED
+    action.decided_at = timezone.now()
+    action.save(update_fields=["status", "decided_at"])
+    ok, message = execute_action(action)
+    (messages.success if ok else messages.error)(request, message)
+    request.session["last_decision"] = action.pk
+    return redirect("chat")
+
+
+@require_POST
+def action_reject(request, pk):
+    action = get_object_or_404(PendingAction.objects.select_related("invoice"), pk=pk)
+    if action.status != PendingAction.Status.PENDING:
+        messages.error(request, "This proposal was already handled.")
+        return redirect("chat")
+    action.status = PendingAction.Status.REJECTED
+    action.decided_at = timezone.now()
+    action.save(update_fields=["status", "decided_at"])
+    messages.success(request, "Proposal rejected. Nothing was sent.")
+    request.session["last_decision"] = action.pk
+    return redirect("chat")

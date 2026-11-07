@@ -58,6 +58,7 @@ Django (SQLite for now), requests, python-dotenv, LLM with JSON output, open-sou
 - [x] Part 2: 5 harder samples, eval upgrades, currency normalization (uncommitted; live eval 9/9 on owner machine)
 - [x] Part 3: chat model openai/gpt-oss-120b, keep paypal_client.py (uncommitted)
 - [x] Part 4: agent backend with approval-gated proposals (uncommitted)
+- [x] Part 5: chat UI with approval cards (uncommitted; server-rendered, no fetch enhancement)
 - [ ] Chat layer (optional)
 - [ ] Demo video, README, Devpost submission
 

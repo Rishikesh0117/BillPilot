@@ -6,7 +6,7 @@ from unittest.mock import patch
 import requests
 
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from services.extraction import ExtractionError, validate
@@ -768,3 +768,139 @@ class ExecuteActionTests(TestCase):
         pp.create_invoice.assert_not_called()
         action.refresh_from_db()
         self.assertEqual(action.status, PendingAction.Status.FAILED)
+
+class ChatViewTests(TestCase):
+    def set_session_history(self, history):
+        session = self.client.session
+        session["chat_history"] = history
+        session.save()
+
+    def make_pending_reminder(self, note="Pay up please"):
+        inv = make_invoice()
+        action = PendingAction.objects.create(
+            tool="propose_reminder", invoice=inv,
+            args={"invoice_id": inv.pk, "note": note},
+            summary="Send payment reminder", status=PendingAction.Status.PENDING)
+        return inv, action
+
+    def test_get_empty_shows_suggested_prompts(self):
+        resp = self.client.get(reverse("chat"))
+        self.assertContains(resp, "Who hasn't paid?")
+        self.assertContains(resp, "Which invoices are overdue?")
+        self.assertContains(resp, "Remind overdue clients")
+        self.assertContains(resp, ">Send<")
+        self.assertContains(resp, ">Assistant<")
+
+    def test_post_message_appends_thread(self):
+        with patch("invoices.views.run_agent",
+                   return_value={"message": "2 unpaid.", "proposals": []}) as agent:
+            resp = self.client.post(reverse("chat"), {"message": "Who is unpaid"}, follow=True)
+        self.assertContains(resp, "Who is unpaid")
+        self.assertContains(resp, "2 unpaid.")
+        self.assertEqual(len(self.client.session["chat_history"]), 2)
+        agent.assert_called_once()
+
+    def test_history_trimmed_to_20(self):
+        self.set_session_history([{"role": "user", "content": f"m{i}"} for i in range(20)])
+        with patch("invoices.views.run_agent", return_value={"message": "ok", "proposals": []}):
+            self.client.post(reverse("chat"), {"message": "next"})
+        history = self.client.session["chat_history"]
+        self.assertEqual(len(history), 20)
+        self.assertEqual(history[0]["content"], "m2")
+        self.assertEqual(history[-1], {"role": "assistant", "content": "ok"})
+
+    def test_empty_message_calls_nothing(self):
+        with patch("invoices.views.run_agent") as agent:
+            resp = self.client.post(reverse("chat"), {"message": "   "}, follow=True)
+        agent.assert_not_called()
+        self.assertContains(resp, "Please type a message.")
+        self.assertNotIn("chat_history", self.client.session)
+
+    def test_long_message_truncated(self):
+        with patch("invoices.views.run_agent",
+                   return_value={"message": "ok", "proposals": []}) as agent:
+            self.client.post(reverse("chat"), {"message": "x" * 1500})
+        sent = agent.call_args[0][0]
+        self.assertEqual(len(sent[-1]["content"]), 1000)
+
+    def test_agent_error_keeps_conversation(self):
+        self.set_session_history([
+            {"role": "user", "content": "hello"},
+            {"role": "assistant", "content": "hi there"},
+        ])
+        with patch("invoices.views.run_agent", side_effect=AgentError("down")):
+            resp = self.client.post(reverse("chat"), {"message": "again"}, follow=True)
+        self.assertContains(resp, "Assistant error")
+        self.assertContains(resp, "hello")
+        self.assertContains(resp, "hi there")
+        self.assertEqual(len(self.client.session["chat_history"]), 2)
+
+    def test_pending_proposals_shown(self):
+        inv, _ = self.make_pending_reminder()
+        resp = self.client.get(reverse("chat"))
+        self.assertContains(resp, "Send payment reminder")
+        self.assertContains(resp, "Pay up please")
+        self.assertContains(resp, ">Approve<")
+        self.assertContains(resp, ">Reject<")
+        self.assertContains(resp, reverse("invoice_detail", args=[inv.pk]))
+
+    def test_default_reminder_text_shown_when_no_note(self):
+        self.make_pending_reminder(note=None)
+        self.assertContains(
+            self.client.get(reverse("chat")), "Friendly reminder: this invoice is still unpaid.")
+
+    def test_send_proposal_card_shows_recipient(self):
+        inv = make_invoice(state=Invoice.State.REVIEW, paypal_status="")
+        PendingAction.objects.create(
+            tool="propose_send_invoice", invoice=inv, args={"invoice_id": inv.pk},
+            summary=f"Create and send invoice #{inv.pk} to c@example.com via PayPal",
+            status=PendingAction.Status.PENDING)
+        resp = self.client.get(reverse("chat"))
+        self.assertContains(resp, "c@example.com")
+        self.assertContains(resp, ">Approve<")
+
+    def test_approve_executes_and_shows_result(self):
+        inv, action = self.make_pending_reminder(note=None)
+        with patch("invoices.pipeline.paypal_client") as pp:
+            pp.get_status.return_value = "SENT"
+            resp = self.client.post(reverse("action_approve", args=[action.pk]), follow=True)
+        action.refresh_from_db()
+        self.assertEqual(action.status, PendingAction.Status.DONE)
+        self.assertEqual(pp.send_reminder.call_count, 1)
+        self.assertContains(resp, "Reminder sent to the customer")
+        self.assertContains(resp, reverse("invoice_detail", args=[inv.pk]))
+
+    def test_approve_twice_second_is_handled(self):
+        _, action = self.make_pending_reminder()
+        with patch("invoices.pipeline.paypal_client") as pp:
+            pp.get_status.return_value = "SENT"
+            self.client.post(reverse("action_approve", args=[action.pk]))
+            resp = self.client.post(reverse("action_approve", args=[action.pk]), follow=True)
+        self.assertEqual(pp.send_reminder.call_count, 1)
+        self.assertContains(resp, "already handled")
+
+    def test_reject_executes_nothing(self):
+        _, action = self.make_pending_reminder()
+        with patch("invoices.pipeline.paypal_client") as pp:
+            resp = self.client.post(reverse("action_reject", args=[action.pk]), follow=True)
+        action.refresh_from_db()
+        self.assertEqual(action.status, PendingAction.Status.REJECTED)
+        pp.send_reminder.assert_not_called()
+        self.assertContains(resp, "Proposal rejected")
+
+    def test_approve_reject_require_post(self):
+        _, action = self.make_pending_reminder()
+        self.assertEqual(self.client.get(reverse("action_approve", args=[action.pk])).status_code, 405)
+        self.assertEqual(self.client.get(reverse("action_reject", args=[action.pk])).status_code, 405)
+        action.refresh_from_db()
+        self.assertEqual(action.status, PendingAction.Status.PENDING)
+
+    def test_approve_missing_returns_404(self):
+        self.assertEqual(self.client.post(reverse("action_approve", args=[999])).status_code, 404)
+        self.assertEqual(self.client.post(reverse("action_reject", args=[999])).status_code, 404)
+
+    def test_csrf_enforced(self):
+        strict = Client(enforce_csrf_checks=True)
+        self.assertEqual(strict.post(reverse("chat"), {"message": "hi"}).status_code, 403)
+        _, action = self.make_pending_reminder()
+        self.assertEqual(strict.post(reverse("action_approve", args=[action.pk])).status_code, 403)

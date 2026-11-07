@@ -11,4 +11,7 @@ urlpatterns = [
     path("invoices/<int:pk>/remind/", views.invoice_remind, name="invoice_remind"),
     path("invoices/<int:pk>/delete/", views.invoice_delete, name="invoice_delete"),
     path("invoices/refresh/", views.invoice_refresh_all, name="invoice_refresh_all"),
+    path("chat/", views.chat, name="chat"),
+    path("chat/actions/<int:pk>/approve/", views.action_approve, name="action_approve"),
+    path("chat/actions/<int:pk>/reject/", views.action_reject, name="action_reject"),
 ]
