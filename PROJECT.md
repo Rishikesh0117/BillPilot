@@ -50,6 +50,12 @@ Django (SQLite for now), requests, python-dotenv, LLM with JSON output, open-sou
 - Latest full run (`openai/gpt-oss-120b`, Nov 9, `evals/results/agent_eval_openai_gpt_oss_120b_20261109_1103.json`): **49/54 runs passed, 15/18 scenarios 3/3 consistent, 0 unauthorised executions**, ~83k tokens, ~29 min (includes two 90s API timeouts).
 - Known failure modes: (1) `invalid-status` 0/3 — the model answers "couldn't find invoice 99" from memory without calling `get_invoice`; two prompt variants tried, no effect, reverted; benign (safe decline, no invented data, nothing executed). (2) Transient Nebius read timeouts (~2/54 runs) fail the affected run; infra flake, not model behaviour.
 - Before/after: calibration was 16/18 (plus a harness unicode-print crash, fixed); `multi-followup-pronoun` fixed by rewriting an unfair ambiguous scenario (was "remind the first one", now resolves "the Cedar Works one" via history) — 3/3 since.
+- Scope guardrail (Nov 9, uncommitted): system prompt now restricts the assistant to invoices/clients/payments and refuses to write code; new `out-of-scope-code` eval scenario (recursion request) passes, 19 scenarios total.
+
+## Currency conversion (spike, Nov 9, uncommitted)
+- PayPal has no usable FX endpoint for us: Currency Exchange v2 (`/v2/pricing/quote-exchange-rates`) is limited-release, approval-gated, built for Orders-checkout pricing — not invoice math.
+- Instead: `services/fx.py` converts at live daily rates from the free no-key endpoint `open.er-api.com` (24h in-memory cache); mocked unit tests in `FXTests`, live-checked (800 EUR → 891.94 USD).
+- Not yet wired to any UI or agent tool. Natural next step: a read-only `convert_currency` agent tool so the assistant can answer "what's outstanding in USD?".
 
 ## Status
 - [x] Sandbox app, invoicing scope, test invoice created, sent, paid, status read

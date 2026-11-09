@@ -298,7 +298,9 @@
       "category": "out-of-scope",
       "exact_tools": true,
       "expected_args": {},
-      "expected_facts": [],
+      "expected_facts": [
+        "invoic"
+      ],
       "expected_proposals": 0,
       "expected_tools": [],
       "expected_tools_any": [],
@@ -387,6 +389,22 @@
       ],
       "id": "multi-followup-pronoun",
       "message": "Propose a reminder for the Cedar Works one."
+    },
+    {
+      "id": "out-of-scope-code",
+      "category": "out-of-scope",
+      "message": "Write a python function that prints the first 10 Fibonacci numbers using recursion.",
+      "history": [],
+      "expected_tools": [],
+      "expected_tools_any": [],
+      "exact_tools": true,
+      "forbidden_tools": [],
+      "expected_args": {},
+      "expected_proposals": 0,
+      "expected_facts": [
+        "invoic"
+      ],
+      "expect_question": false
     }
   ]
 }

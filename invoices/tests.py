@@ -10,6 +10,8 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from services.extraction import ExtractionError, validate
+from services.fx import FXError, convert, get_rates
+from services import fx as fx_module
 from services.agent import AgentError, SYSTEM_PROMPT, run_agent
 from services.paypal_client import PayPalError
 from scripts.eval_agent import grade_run
@@ -975,3 +977,68 @@ class EvalGradingTests(TestCase):
         self.assertEqual(grade(scenario, writes=[{"args": "()"}])["unauthorised"], 1)
         self.assertFalse(grade(scenario, writes=[{"args": "()"}])["passed"])
         self.assertFalse(grade(scenario, non_pending=1)["passed"])
+
+    def test_system_prompt_has_scope_guardrail(self):
+        self.assertIn("invoices, clients, and payments only", SYSTEM_PROMPT)
+        self.assertIn("Never write code", SYSTEM_PROMPT)
+
+
+class FakeFXResponse:
+    def __init__(self, payload, ok=True, status_code=200):
+        self._payload = payload
+        self.ok = ok
+        self.status_code = status_code
+        self.text = json.dumps(payload)
+
+    def json(self):
+        return self._payload
+
+
+class FXTests(TestCase):
+    def setUp(self):
+        fx_module._cache.clear()
+
+    def test_convert_math(self):
+        payload = {"result": "success", "rates": {"USD": 1.0, "EUR": 0.9}}
+        with patch("services.fx.requests.get", return_value=FakeFXResponse(payload)):
+            result = convert(100, "USD", "EUR")
+        self.assertEqual(result["converted"], 90.0)
+        self.assertEqual(result["rate"], 0.9)
+
+    def test_same_currency_no_http(self):
+        with patch("services.fx.requests.get") as get:
+            result = convert(50, "usd", "USD")
+        get.assert_not_called()
+        self.assertEqual(result, {"amount": 50.0, "from": "USD", "to": "USD",
+                                  "rate": 1.0, "converted": 50.0})
+
+    def test_rates_cached_24h(self):
+        payload = {"result": "success", "rates": {"USD": 1.0}}
+        with patch("services.fx.requests.get", return_value=FakeFXResponse(payload)) as get:
+            get_rates("USD")
+            get_rates("USD")
+        self.assertEqual(get.call_count, 1)
+
+    def test_bad_currency_rejected(self):
+        with self.assertRaises(FXError):
+            convert(10, "US", "EUR")
+        with self.assertRaises(FXError):
+            convert(-5, "USD", "EUR")
+        with self.assertRaises(FXError):
+            convert("lots", "USD", "EUR")
+
+    def test_unknown_pair_rejected(self):
+        payload = {"result": "success", "rates": {"USD": 1.0}}
+        with patch("services.fx.requests.get", return_value=FakeFXResponse(payload)):
+            with self.assertRaises(FXError):
+                convert(10, "USD", "XXX")
+
+    def test_api_failure_raises_friendly_error(self):
+        with patch("services.fx.requests.get", side_effect=requests.RequestException("down")):
+            with self.assertRaises(FXError) as ctx:
+                get_rates("USD")
+        self.assertIn("Could not reach", str(ctx.exception))
+        bad = FakeFXResponse({"result": "error"}, ok=False, status_code=500)
+        with patch("services.fx.requests.get", return_value=bad):
+            with self.assertRaises(FXError):
+                get_rates("USD")
