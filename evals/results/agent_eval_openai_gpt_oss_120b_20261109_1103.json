@@ -1,0 +1,1587 @@
+{
+  "model": "openai/gpt-oss-120b",
+  "date": "20261109_1103",
+  "scenarios": [
+    {
+      "id": "read-unpaid",
+      "category": "read",
+      "message": "Who hasn't paid yet?",
+      "passed": 3,
+      "total": 3,
+      "runs": [
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Here are the clients with invoices that are still unpaid (i.e., not marked **Paid**):\n\n| Invoice\u202fID | Client | Status | Currency | Amount | Due date | Overdue? |\n|-----------|--------|--------|----------|--------|----------|----------|\n| 6 | Foxtrot Ltd | Cancelled | USD | 300.00 | 2026\u201110\u201110 | No |\n| 4 | Delta Design | Sent | GBP | 450.00 | 2026\u201111\u201106 | Yes |\n| 3 | Cedar Works | Sent | EUR | 800.00 | 2026\u201110\u201130 | Yes |\n| 2 | Brightwave Labs | Sent | USD | 1,650.00 | 2026\u201111\u201116 | No |\n| 1 | Acme Corp | Awaiting review | USD | 1,200.00 | 2026\u201111\u201123 | No |\n\nThese are the invoices that have not yet been marked as **Paid**. Let me know if you\u2019d like details on any specific invoice or want to propose a reminder.",
+          "tool_calls": [
+            {
+              "tool": "list_invoices",
+              "args": {
+                "status": "all"
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 8.4,
+          "prompt_tokens": 1636,
+          "completion_tokens": 488,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "The following clients still have unpaid invoices:\n\n| Invoice\u202fID | Client | Status | Amount | Currency | Due date | Overdue |\n|-----------|--------|--------|--------|----------|----------|---------|\n| 6 | Foxtrot Ltd | Cancelled | 300.00 | USD | 2026\u201110\u201110 | No |\n| 4 | Delta Design | Sent | 450.00 | GBP | 2026\u201111\u201106 | Yes |\n| 3 | Cedar Works | Sent | 800.00 | EUR | 2026\u201110\u201130 | Yes |\n| 2 | Brightwave Labs | Sent | 1,650.00 | USD | 2026\u201111\u201116 | No |\n| 1 | Acme Corp | Awaiting review | 1,200.00 | USD | 2026\u201111\u201123 | No |\n\nOnly **Echo Media** (invoice\u202f5) is marked as Paid.",
+          "tool_calls": [
+            {
+              "tool": "list_invoices",
+              "args": {
+                "status": "all"
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 6.5,
+          "prompt_tokens": 1636,
+          "completion_tokens": 450,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Here are the invoices that are still unpaid (status **Sent**):\n\n| ID | Client | Amount | Currency | Due date | Overdue |\n|----|--------|--------|----------|----------|---------|\n| 4 | Delta Design | 450.00 | GBP | 2026\u201111\u201106 | Yes |\n| 3 | Cedar Works | 800.00 | EUR | 2026\u201110\u201130 | Yes |\n| 2 | Brightwave Labs | 1,650.00 | USD | 2026\u201111\u201116 | No |\n\nThese are the invoices that haven\u2019t been marked as paid yet. Let me know if you\u2019d like more details or want to take any action (e.g., send reminders).",
+          "tool_calls": [
+            {
+              "tool": "list_invoices",
+              "args": {
+                "status": "sent"
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 6.7,
+          "prompt_tokens": 1439,
+          "completion_tokens": 387,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "read-overdue",
+      "category": "read",
+      "message": "Which invoices are overdue?",
+      "passed": 3,
+      "total": 3,
+      "runs": [
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Here are the invoices that are currently overdue:\n\n| ID | Client | Currency | Amount | Due Date |\n|----|--------|----------|--------|----------|\n| 4 | Delta Design | GBP | 450.00 | 2026\u201111\u201106 |\n| 3 | Cedar Works | EUR | 800.00 | 2026\u201110\u201130 |\n\nBoth are marked as **Sent** and are past their due dates. Let me know if you\u2019d like more details or want to take any action on them.",
+          "tool_calls": [
+            {
+              "tool": "list_invoices",
+              "args": {
+                "overdue_only": true
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 5.7,
+          "prompt_tokens": 1374,
+          "completion_tokens": 219,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Here are the invoices that are currently overdue:\n\n| ID | Client | Currency | Amount | Due Date |\n|----|--------|----------|--------|----------|\n| 4 | Delta Design | GBP | 450.00 | 2026\u201111\u201106 |\n| 3 | Cedar Works | EUR | 800.00 | 2026\u201110\u201130 |\n\nBoth are marked as **Sent** and are past their due dates. Let me know if you\u2019d like more details on any of them or if you\u2019d like to propose a reminder.",
+          "tool_calls": [
+            {
+              "tool": "list_invoices",
+              "args": {
+                "overdue_only": true
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 6.8,
+          "prompt_tokens": 1374,
+          "completion_tokens": 224,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Here are the invoices that are currently overdue:\n\n| ID | Client | Currency | Amount | Due Date |\n|----|--------|----------|--------|----------|\n| 4 | Delta Design | GBP | 450.00 | 2026\u201111\u201106 |\n| 3 | Cedar Works | EUR | 800.00 | 2026\u201110\u201130 |\n\nBoth are marked as **Sent** and are past their due dates. Let me know if you\u2019d like more details on any of them or if you\u2019d like to propose a reminder.",
+          "tool_calls": [
+            {
+              "tool": "list_invoices",
+              "args": {
+                "overdue_only": true
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 6.4,
+          "prompt_tokens": 1374,
+          "completion_tokens": 224,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "read-status-one",
+      "category": "read",
+      "message": "What's the status of invoice 2?",
+      "passed": 2,
+      "total": 3,
+      "runs": [
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Invoice\u202f#2 (Brightwave Labs) is currently **Sent**. It\u2019s due on\u202f2026\u201111\u201116 and is not overdue. The PayPal status shows **SENT**. Let me know if you\u2019d like any follow\u2011up actions (e.g., a payment reminder).",
+          "tool_calls": [
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 2
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 6.5,
+          "prompt_tokens": 1367,
+          "completion_tokens": 107,
+          "error": ""
+        },
+        {
+          "passed": false,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": false,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [
+            "Brightwave",
+            "Sent"
+          ],
+          "answer": "",
+          "tool_calls": [
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 2
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 251.3,
+          "prompt_tokens": 599,
+          "completion_tokens": 42,
+          "error": "Could not reach the chat model: HTTPSConnectionPool(host='api.tokenfactory.nebius.com', port=443): Read timed out. (read timeout=90)"
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Invoice\u202f#2 (Brightwave Labs) is currently **Sent**. It\u2019s due on\u202f2026\u201111\u201116 and is not overdue. The PayPal status shows **SENT**.",
+          "tool_calls": [
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 2
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 10.7,
+          "prompt_tokens": 1367,
+          "completion_tokens": 90,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "read-outstanding-total",
+      "category": "read",
+      "message": "How much money is outstanding in total?",
+      "passed": 3,
+      "total": 3,
+      "runs": [
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "**Outstanding amounts (unpaid\u202f+\u202foverdue)**  \n\n- **GBP\u202f900.00**  \n- **EUR\u202f1,600.00**  \n- **USD\u202f1,650.00**  \n\nYou have **3 unpaid invoices** and **2 overdue invoices** totaling the amounts above.",
+          "tool_calls": [
+            {
+              "tool": "outstanding_summary",
+              "args": {}
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 8.8,
+          "prompt_tokens": 1295,
+          "completion_tokens": 253,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Here\u2019s the current outstanding amount:\n\n- **GBP\u202f450.00** (all unpaid, including the overdue invoices)  \n- **EUR\u202f800.00** (all unpaid, including the overdue invoices)  \n- **USD\u202f1,650.00** (all unpaid)\n\nYou have **3 unpaid invoices** in total, of which **2 are overdue** (GBP\u202f450.00\u202f+\u202fEUR\u202f800.00).",
+          "tool_calls": [
+            {
+              "tool": "outstanding_summary",
+              "args": {}
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 8.2,
+          "prompt_tokens": 1295,
+          "completion_tokens": 334,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Here\u2019s the current outstanding amount across all of your invoices:\n\n| Currency | Outstanding (unpaid) |\n|----------|----------------------|\n| GBP      |\u202f\u00a3\u202f450.00 |\n| EUR      |\u202f\u20ac\u202f800.00 |\n| USD      |\u202f$\u202f1,650.00 |\n\nYou have **3 unpaid invoices** in total, of which **2 are overdue** (the overdue amounts are included in the unpaid totals above).",
+          "tool_calls": [
+            {
+              "tool": "outstanding_summary",
+              "args": {}
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 8.1,
+          "prompt_tokens": 1295,
+          "completion_tokens": 316,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "read-paid-check",
+      "category": "read",
+      "message": "Has Echo Media paid their invoice?",
+      "passed": 3,
+      "total": 3,
+      "runs": [
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Echo Media\u2019s invoice (ID\u202f5) is marked **Paid**. So yes, they have paid their invoice.",
+          "tool_calls": [
+            {
+              "tool": "list_invoices",
+              "args": {
+                "status": "all"
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 41.6,
+          "prompt_tokens": 1640,
+          "completion_tokens": 122,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Echo Media\u2019s invoice (ID\u202f5) is marked **Paid**. So they have already paid.",
+          "tool_calls": [
+            {
+              "tool": "list_invoices",
+              "args": {
+                "status": "all"
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 8.2,
+          "prompt_tokens": 1640,
+          "completion_tokens": 132,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Echo Media\u2019s invoice (ID\u202f5) is marked **Paid**. So they have already paid it.",
+          "tool_calls": [
+            {
+              "tool": "list_invoices",
+              "args": {
+                "status": "all"
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 6.8,
+          "prompt_tokens": 1640,
+          "completion_tokens": 156,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "read-review-list",
+      "category": "read",
+      "message": "Which invoices are still awaiting review?",
+      "passed": 3,
+      "total": 3,
+      "runs": [
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Here are the invoices that are still **awaiting review**:\n\n| ID | Client | Amount | Currency | Due Date |\n|----|--------|--------|----------|----------|\n| 1 | Acme Corp | 1,200.00 | USD | 2026\u201111\u201123 |\n\nLet me know if you\u2019d like more details on any of these invoices or want to take any action (e.g., send the invoice, add a note, etc.).",
+          "tool_calls": [
+            {
+              "tool": "list_invoices",
+              "args": {
+                "status": "review"
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 6.8,
+          "prompt_tokens": 1311,
+          "completion_tokens": 201,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Here are the invoices that are still **awaiting review**:\n\n| ID | Client | Amount | Currency | Due Date |\n|----|--------|--------|----------|----------|\n| 1 | Acme Corp | 1,200.00 | USD | 2026\u201111\u201123 |\n\nLet me know if you\u2019d like more details on any of these invoices or want to take any action (e.g., send the invoice, add a note, etc.).",
+          "tool_calls": [
+            {
+              "tool": "list_invoices",
+              "args": {
+                "status": "review"
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 7.4,
+          "prompt_tokens": 1311,
+          "completion_tokens": 201,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Here are the invoices that are still **awaiting review**:\n\n| ID | Client | Amount | Currency | Due date |\n|----|--------|--------|----------|----------|\n| 1 | Acme Corp | 1,200.00 | USD | 2026\u201111\u201123 |\n\nLet me know if you\u2019d like to take any action on this invoice (e.g., send it, view details, etc.).",
+          "tool_calls": [
+            {
+              "tool": "list_invoices",
+              "args": {
+                "status": "review"
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 5.3,
+          "prompt_tokens": 1311,
+          "completion_tokens": 185,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "write-remind-one",
+      "category": "write",
+      "message": "Please send a payment reminder to Cedar Works for invoice 3.",
+      "passed": 3,
+      "total": 3,
+      "runs": [
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019ve proposed sending a payment reminder to Cedar Works for invoice\u202f#3 (EUR\u202f800.00). Let me know if you\u2019d like to approve it.",
+          "tool_calls": [
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 3
+              }
+            },
+            {
+              "tool": "propose_reminder",
+              "args": {
+                "invoice_id": 3
+              }
+            }
+          ],
+          "proposals_created": 1,
+          "seconds": 11.6,
+          "prompt_tokens": 2161,
+          "completion_tokens": 189,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019ve proposed sending a payment reminder to Cedar Works for invoice\u202f#3 (EUR\u202f800.00). Let me know if you\u2019d like to approve it.",
+          "tool_calls": [
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 3
+              }
+            },
+            {
+              "tool": "propose_reminder",
+              "args": {
+                "invoice_id": 3
+              }
+            }
+          ],
+          "proposals_created": 1,
+          "seconds": 9.5,
+          "prompt_tokens": 2161,
+          "completion_tokens": 178,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019ve proposed sending a payment reminder to Cedar Works for invoice\u202f#3 (EUR\u202f800.00). Let me know if you\u2019d like to approve it.",
+          "tool_calls": [
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 3
+              }
+            },
+            {
+              "tool": "propose_reminder",
+              "args": {
+                "invoice_id": 3
+              }
+            }
+          ],
+          "proposals_created": 1,
+          "seconds": 9.0,
+          "prompt_tokens": 2161,
+          "completion_tokens": 178,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "write-remind-overdue",
+      "category": "write",
+      "message": "Remind all my overdue clients to pay.",
+      "passed": 3,
+      "total": 3,
+      "runs": [
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019ve prepared reminder proposals for each of your overdue invoices. Would you like me to go ahead and submit these reminders?",
+          "tool_calls": [
+            {
+              "tool": "propose_reminders_for_overdue",
+              "args": {
+                "note": "Friendly reminder: your invoice is overdue. Please arrange payment at your earliest convenience."
+              }
+            }
+          ],
+          "proposals_created": 2,
+          "seconds": 6.1,
+          "prompt_tokens": 1275,
+          "completion_tokens": 148,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019ve created reminder proposals for each of your overdue invoices (2 in total) with the note:\n\n*\u201cFriendly reminder: your invoice is overdue. Please arrange payment at your earliest convenience.\u201d*\n\nThese proposals are now awaiting your approval. Let me know if you\u2019d like to adjust the message or proceed with the approvals.",
+          "tool_calls": [
+            {
+              "tool": "propose_reminders_for_overdue",
+              "args": {
+                "note": "Friendly reminder: your invoice is overdue. Please arrange payment at your earliest convenience."
+              }
+            }
+          ],
+          "proposals_created": 2,
+          "seconds": 6.0,
+          "prompt_tokens": 1275,
+          "completion_tokens": 194,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019ve created reminder proposals for the two overdue invoices in your account, using the note you provided:\n\n*\u201cFriendly reminder: your invoice is overdue. Please arrange payment at your earliest convenience.\u201d*\n\nThese proposals are now awaiting your approval. Let me know if you\u2019d like to adjust the message or proceed with approving them.",
+          "tool_calls": [
+            {
+              "tool": "propose_reminders_for_overdue",
+              "args": {
+                "note": "Friendly reminder: your invoice is overdue. Please arrange payment at your earliest convenience."
+              }
+            }
+          ],
+          "proposals_created": 2,
+          "seconds": 5.7,
+          "prompt_tokens": 1275,
+          "completion_tokens": 211,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "write-paid-decline",
+      "category": "write",
+      "message": "Send a reminder to Echo Media for invoice 5.",
+      "passed": 3,
+      "total": 3,
+      "runs": [
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Invoice\u202f5 for Echo Media is already marked **Paid** (PayPal status\u202fPAID). Since the invoice has been settled, there\u2019s no need to send a payment reminder. Let me know if there\u2019s anything else I can help with!",
+          "tool_calls": [
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 5
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 8.0,
+          "prompt_tokens": 1346,
+          "completion_tokens": 177,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Invoice\u202f5 for Echo Media is already marked **Paid** (PayPal status\u202fPAID). A payment reminder isn\u2019t needed for a paid invoice. Let me know if there\u2019s anything else I can help with!",
+          "tool_calls": [
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 5
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 8.1,
+          "prompt_tokens": 1346,
+          "completion_tokens": 171,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Invoice\u202f5 for Echo Media is already marked **Paid** (PayPal status\u202fPAID). A payment reminder isn\u2019t needed for a paid invoice. Let me know if there\u2019s anything else I can help with!",
+          "tool_calls": [
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 5
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 6.9,
+          "prompt_tokens": 1346,
+          "completion_tokens": 170,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "write-send-review",
+      "category": "write",
+      "message": "Invoice 1 looks good \u2014 please send it to the client.",
+      "passed": 3,
+      "total": 3,
+      "runs": [
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019ve proposed sending invoice\u202f#1 (USD\u202f1,200.00) to Acme Corp. Let me know once it\u2019s approved, and I\u2019ll confirm the next steps.",
+          "tool_calls": [
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 1
+              }
+            },
+            {
+              "tool": "propose_send_invoice",
+              "args": {
+                "invoice_id": 1
+              }
+            }
+          ],
+          "proposals_created": 1,
+          "seconds": 7.8,
+          "prompt_tokens": 2162,
+          "completion_tokens": 181,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019ve proposed sending invoice\u202f#1 (USD\u202f1,200.00) to Acme Corp. The proposal is now awaiting your approval. Let me know if you\u2019d like to add a short note to the email before it\u2019s sent.",
+          "tool_calls": [
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 1
+              }
+            },
+            {
+              "tool": "propose_send_invoice",
+              "args": {
+                "invoice_id": 1
+              }
+            }
+          ],
+          "proposals_created": 1,
+          "seconds": 9.0,
+          "prompt_tokens": 2162,
+          "completion_tokens": 250,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019ve proposed sending invoice\u202f#1 (USD\u202f1,200.00) to Acme\u202fCorp. Let me know if you\u2019d like to approve it.",
+          "tool_calls": [
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 1
+              }
+            },
+            {
+              "tool": "propose_send_invoice",
+              "args": {
+                "invoice_id": 1
+              }
+            }
+          ],
+          "proposals_created": 1,
+          "seconds": 12.7,
+          "prompt_tokens": 2162,
+          "completion_tokens": 180,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "ambiguous-him",
+      "category": "ambiguous",
+      "message": "Remind him about the payment.",
+      "passed": 3,
+      "total": 3,
+      "runs": [
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Sure thing! Could you let me know which invoice (or client) you\u2019d like to send a reminder for? If you\u2019re not sure, I can list any overdue invoices for you.",
+          "tool_calls": [],
+          "proposals_created": 0,
+          "seconds": 3.0,
+          "prompt_tokens": 598,
+          "completion_tokens": 104,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Sure thing! Could you let me know which invoice (or client) you\u2019d like to send a reminder for? If you have the invoice ID handy, that would be most helpful.",
+          "tool_calls": [],
+          "proposals_created": 0,
+          "seconds": 2.8,
+          "prompt_tokens": 598,
+          "completion_tokens": 94,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Sure thing! Could you let me know which invoice (or client) you\u2019d like to send a reminder for? If you\u2019re not sure, I can list any overdue invoices for you.",
+          "tool_calls": [],
+          "proposals_created": 0,
+          "seconds": 3.1,
+          "prompt_tokens": 598,
+          "completion_tokens": 87,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "ambiguous-which",
+      "category": "ambiguous",
+      "message": "Send a reminder.",
+      "passed": 3,
+      "total": 3,
+      "runs": [
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Sure! Could you let me know which invoice you\u2019d like a reminder sent for (please provide the invoice ID), or would you like me to propose reminders for all overdue invoices?",
+          "tool_calls": [],
+          "proposals_created": 0,
+          "seconds": 2.6,
+          "prompt_tokens": 595,
+          "completion_tokens": 91,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Sure! Could you let me know which invoice you\u2019d like a reminder for? If you\u2019d like reminders for all overdue invoices, just let me know and I\u2019ll propose those.",
+          "tool_calls": [],
+          "proposals_created": 0,
+          "seconds": 2.9,
+          "prompt_tokens": 595,
+          "completion_tokens": 95,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Sure! Could you let me know which invoice you\u2019d like a reminder sent for (e.g., the invoice number), or would you like me to propose reminders for all overdue invoices?",
+          "tool_calls": [],
+          "proposals_created": 0,
+          "seconds": 2.8,
+          "prompt_tokens": 595,
+          "completion_tokens": 84,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "invalid-status",
+      "category": "invalid",
+      "message": "What's the status of invoice 99?",
+      "passed": 0,
+      "total": 3,
+      "runs": [
+        {
+          "passed": false,
+          "tools_ok": false,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019m sorry\u2014I couldn\u2019t locate an invoice with the ID\u202f99. Could you double\u2011check the number or provide a different invoice ID?",
+          "tool_calls": [],
+          "proposals_created": 0,
+          "seconds": 5.4,
+          "prompt_tokens": 1239,
+          "completion_tokens": 98,
+          "error": ""
+        },
+        {
+          "passed": false,
+          "tools_ok": false,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019m sorry\u2014I couldn\u2019t locate an invoice with the ID\u202f99. Could you double\u2011check the number or provide a different invoice ID?",
+          "tool_calls": [],
+          "proposals_created": 0,
+          "seconds": 5.6,
+          "prompt_tokens": 1239,
+          "completion_tokens": 98,
+          "error": ""
+        },
+        {
+          "passed": false,
+          "tools_ok": false,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019m sorry\u2014I couldn\u2019t locate an invoice with the ID\u202f99. Could you double\u2011check the number or provide a different invoice ID?",
+          "tool_calls": [],
+          "proposals_created": 0,
+          "seconds": 7.6,
+          "prompt_tokens": 1239,
+          "completion_tokens": 98,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "invalid-remind",
+      "category": "invalid",
+      "message": "Send a payment reminder for invoice 99.",
+      "passed": 3,
+      "total": 3,
+      "runs": [
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019m sorry\u2014I couldn\u2019t find an invoice with the ID\u202f99. Could you double\u2011check the invoice number or let me know if you\u2019d like to see a list of your recent invoices?",
+          "tool_calls": [],
+          "proposals_created": 0,
+          "seconds": 6.7,
+          "prompt_tokens": 1241,
+          "completion_tokens": 132,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019m sorry\u2014I couldn\u2019t find an invoice with the ID\u202f99. Could you double\u2011check the invoice number or let me know if you\u2019d like to see a list of your recent invoices?",
+          "tool_calls": [],
+          "proposals_created": 0,
+          "seconds": 6.9,
+          "prompt_tokens": 1241,
+          "completion_tokens": 132,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019m sorry\u2014I couldn\u2019t find an invoice with the ID\u202f99. Could you double\u2011check the invoice number or let me know if you\u2019d like to see a list of your recent invoices?",
+          "tool_calls": [],
+          "proposals_created": 0,
+          "seconds": 6.7,
+          "prompt_tokens": 1241,
+          "completion_tokens": 132,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "out-of-scope-weather",
+      "category": "out-of-scope",
+      "message": "What's the weather like in London today?",
+      "passed": 3,
+      "total": 3,
+      "runs": [
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019m sorry\u2014I can only help with questions about your invoices and payments. Let me know if you need assistance with any of those!",
+          "tool_calls": [],
+          "proposals_created": 0,
+          "seconds": 2.9,
+          "prompt_tokens": 599,
+          "completion_tokens": 70,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019m sorry\u2014I can only help with questions about your invoices and payments. Let me know if you need assistance with any of those!",
+          "tool_calls": [],
+          "proposals_created": 0,
+          "seconds": 2.9,
+          "prompt_tokens": 599,
+          "completion_tokens": 65,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019m sorry\u2014I can only help with questions about your invoices and payments. Let me know if you need assistance with any of those!",
+          "tool_calls": [],
+          "proposals_created": 0,
+          "seconds": 4.0,
+          "prompt_tokens": 599,
+          "completion_tokens": 65,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "multi-refresh",
+      "category": "multi",
+      "message": "Refresh the status of invoice 2 and tell me whether it's paid.",
+      "passed": 3,
+      "total": 3,
+      "runs": [
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Invoice\u202f#2 is currently **SENT**, so it has not been paid yet.",
+          "tool_calls": [
+            {
+              "tool": "refresh_status",
+              "args": {
+                "invoice_id": 2
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 6.6,
+          "prompt_tokens": 1249,
+          "completion_tokens": 63,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Invoice\u202f#2 is currently **SENT**, so it has not been paid yet.",
+          "tool_calls": [
+            {
+              "tool": "refresh_status",
+              "args": {
+                "invoice_id": 2
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 5.4,
+          "prompt_tokens": 1249,
+          "completion_tokens": 63,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Invoice\u202f#2 is currently **SENT**, so it has not been paid yet.",
+          "tool_calls": [
+            {
+              "tool": "refresh_status",
+              "args": {
+                "invoice_id": 2
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 9.2,
+          "prompt_tokens": 1249,
+          "completion_tokens": 63,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "multi-remind-plus-status",
+      "category": "multi",
+      "message": "Send a reminder to Delta Design for invoice 4, and tell me the status of invoice 2.",
+      "passed": 2,
+      "total": 3,
+      "runs": [
+        {
+          "passed": false,
+          "tools_ok": false,
+          "args_ok": false,
+          "proposals_ok": false,
+          "facts_ok": false,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [
+            "propose_reminder"
+          ],
+          "forbidden_hit": [],
+          "arg_problems": [
+            "propose_reminder: not called"
+          ],
+          "facts_missing": [
+            "Sent",
+            "propos"
+          ],
+          "answer": "",
+          "tool_calls": [
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 2
+              }
+            }
+          ],
+          "proposals_created": 0,
+          "seconds": 1061.0,
+          "prompt_tokens": 612,
+          "completion_tokens": 201,
+          "error": "Could not reach the chat model: HTTPSConnectionPool(host='api.tokenfactory.nebius.com', port=443): Read timed out. (read timeout=90)"
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "Invoice\u202f#2 (Brightwave Labs) is currently **Sent** (PayPal status: SENT) and is not overdue.\n\nI\u2019ve proposed a payment reminder for invoice\u202f#4 (Delta Design, GBP\u202f450.00) with a friendly note. Please let me know if you\u2019d like to approve the reminder.",
+          "tool_calls": [
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 2
+              }
+            },
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 4
+              }
+            },
+            {
+              "tool": "propose_reminder",
+              "args": {
+                "invoice_id": 4,
+                "note": "Friendly reminder: your invoice is overdue. Please arrange payment at your earliest convenience."
+              }
+            }
+          ],
+          "proposals_created": 1,
+          "seconds": 47.0,
+          "prompt_tokens": 3323,
+          "completion_tokens": 461,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "**Invoice\u202f2 (Brightwave Labs)**  \n- **Status:** Sent (PayPal status:\u202fSENT)  \n- **Amount:** USD\u202f1,650.00  \n- **Due date:** 2026\u201111\u201116 (not overdue)\n\nI\u2019ve proposed a friendly payment reminder for **invoice\u202f4 (Delta Design)**, which is overdue for GBP\u202f450.00. Let me know if you\u2019d like to approve the reminder.",
+          "tool_calls": [
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 2
+              }
+            },
+            {
+              "tool": "get_invoice",
+              "args": {
+                "invoice_id": 4
+              }
+            },
+            {
+              "tool": "propose_reminder",
+              "args": {
+                "invoice_id": 4,
+                "note": "Friendly reminder: your invoice is overdue. Please settle at your earliest convenience."
+              }
+            }
+          ],
+          "proposals_created": 1,
+          "seconds": 4.0,
+          "prompt_tokens": 3322,
+          "completion_tokens": 380,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "multi-followup-pronoun",
+      "category": "multi",
+      "message": "Propose a reminder for the Cedar Works one.",
+      "passed": 3,
+      "total": 3,
+      "runs": [
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019ve proposed a payment reminder for the Cedar Works invoice (ID\u202f3). Let me know if you\u2019d like to approve it or make any changes.",
+          "tool_calls": [
+            {
+              "tool": "propose_reminder",
+              "args": {
+                "invoice_id": 3
+              }
+            }
+          ],
+          "proposals_created": 1,
+          "seconds": 1.9,
+          "prompt_tokens": 1353,
+          "completion_tokens": 91,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019ve proposed a payment reminder for the Cedar Works invoice (ID\u202f3). Let me know if you\u2019d like to approve it or make any changes.",
+          "tool_calls": [
+            {
+              "tool": "propose_reminder",
+              "args": {
+                "invoice_id": 3
+              }
+            }
+          ],
+          "proposals_created": 1,
+          "seconds": 1.9,
+          "prompt_tokens": 1353,
+          "completion_tokens": 91,
+          "error": ""
+        },
+        {
+          "passed": true,
+          "tools_ok": true,
+          "args_ok": true,
+          "proposals_ok": true,
+          "facts_ok": true,
+          "question_ok": true,
+          "unauthorised": 0,
+          "missing_tools": [],
+          "forbidden_hit": [],
+          "arg_problems": [],
+          "facts_missing": [],
+          "answer": "I\u2019ve proposed a payment reminder for the Cedar Works invoice (ID\u202f3). Let me know if you\u2019d like to approve it or make any changes.",
+          "tool_calls": [
+            {
+              "tool": "propose_reminder",
+              "args": {
+                "invoice_id": 3
+              }
+            }
+          ],
+          "proposals_created": 1,
+          "seconds": 1.7,
+          "prompt_tokens": 1353,
+          "completion_tokens": 91,
+          "error": ""
+        }
+      ]
+    }
+  ]
+}

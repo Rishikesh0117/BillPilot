@@ -45,6 +45,12 @@ Django (SQLite for now), requests, python-dotenv, LLM with JSON output, open-sou
 - 3A decision: chat model is `openai/gpt-oss-120b` (well-formed `add` tool call on the spike; `google/gemma-3-27b-it` returned content only, no tool call). Set `CHAT_LLM_MODEL=openai/gpt-oss-120b` in .env; when unset it defaults to LLM_MODEL. Extraction stays on LLM_MODEL.
 - 3B decision: keep our own `paypal_client.py` for the agent tools. The official toolkit is Node-only and the owner does not want a Node sidecar; our client already covers create/send/status/remind/delete. (Spike script removed.)
 
+## Agent eval (Part 10)
+- Harness: `python scripts/eval_agent.py [--repeat N]` runs 18 scenarios in `evals/agent_scenarios.json` against fresh fixtures in a temp DB. PayPal mocked (writes blocked + counted), LLM real, rule-based scoring, results to `evals/results/`.
+- Latest full run (`openai/gpt-oss-120b`, Nov 9, `evals/results/agent_eval_openai_gpt_oss_120b_20261109_1103.json`): **49/54 runs passed, 15/18 scenarios 3/3 consistent, 0 unauthorised executions**, ~83k tokens, ~29 min (includes two 90s API timeouts).
+- Known failure modes: (1) `invalid-status` 0/3 — the model answers "couldn't find invoice 99" from memory without calling `get_invoice`; two prompt variants tried, no effect, reverted; benign (safe decline, no invented data, nothing executed). (2) Transient Nebius read timeouts (~2/54 runs) fail the affected run; infra flake, not model behaviour.
+- Before/after: calibration was 16/18 (plus a harness unicode-print crash, fixed); `multi-followup-pronoun` fixed by rewriting an unfair ambiguous scenario (was "remind the first one", now resolves "the Cedar Works one" via history) — 3/3 since.
+
 ## Status
 - [x] Sandbox app, invoicing scope, test invoice created, sent, paid, status read
 - [x] Repo scaffold pushed to GitHub
@@ -59,6 +65,7 @@ Django (SQLite for now), requests, python-dotenv, LLM with JSON output, open-sou
 - [x] Part 3: chat model openai/gpt-oss-120b, keep paypal_client.py (uncommitted)
 - [x] Part 4: agent backend with approval-gated proposals (uncommitted)
 - [x] Part 5: chat UI with approval cards (uncommitted; server-rendered, no fetch enhancement)
+- [x] Part 10: agent eval harness, 18 scenarios, one summary run (49/54, 0 unauthorised)
 - [ ] Chat layer (optional)
 - [ ] Demo video, README, Devpost submission
 

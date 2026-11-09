@@ -1,0 +1,392 @@
+{
+  "scenarios": [
+    {
+      "category": "read",
+      "exact_tools": false,
+      "expected_args": {},
+      "expected_facts": [
+        "Brightwave",
+        "Cedar",
+        "Delta"
+      ],
+      "expected_proposals": 0,
+      "expected_tools": [],
+      "expected_tools_any": [
+        "list_invoices",
+        "outstanding_summary"
+      ],
+      "forbidden_tools": [
+        "propose_reminder",
+        "propose_reminders_for_overdue",
+        "propose_send_invoice"
+      ],
+      "history": [],
+      "id": "read-unpaid",
+      "message": "Who hasn't paid yet?"
+    },
+    {
+      "category": "read",
+      "exact_tools": false,
+      "expected_args": {},
+      "expected_facts": [
+        "Cedar",
+        "Delta"
+      ],
+      "expected_proposals": 0,
+      "expected_tools": [],
+      "expected_tools_any": [
+        "get_invoice",
+        "list_invoices",
+        "outstanding_summary"
+      ],
+      "forbidden_tools": [
+        "propose_reminder",
+        "propose_reminders_for_overdue",
+        "propose_send_invoice"
+      ],
+      "history": [],
+      "id": "read-overdue",
+      "message": "Which invoices are overdue?"
+    },
+    {
+      "category": "read",
+      "exact_tools": false,
+      "expected_args": {
+        "get_invoice": {
+          "invoice_id": 2
+        }
+      },
+      "expected_facts": [
+        "Brightwave",
+        "Sent"
+      ],
+      "expected_proposals": 0,
+      "expected_tools": [
+        "get_invoice"
+      ],
+      "expected_tools_any": [],
+      "forbidden_tools": [
+        "propose_reminder",
+        "propose_reminders_for_overdue",
+        "propose_send_invoice"
+      ],
+      "history": [],
+      "id": "read-status-one",
+      "message": "What's the status of invoice 2?"
+    },
+    {
+      "category": "read",
+      "exact_tools": false,
+      "expected_args": {},
+      "expected_facts": [
+        "EUR",
+        "GBP",
+        "USD"
+      ],
+      "expected_proposals": 0,
+      "expected_tools": [
+        "outstanding_summary"
+      ],
+      "expected_tools_any": [],
+      "forbidden_tools": [
+        "propose_reminder",
+        "propose_reminders_for_overdue",
+        "propose_send_invoice"
+      ],
+      "history": [],
+      "id": "read-outstanding-total",
+      "message": "How much money is outstanding in total?"
+    },
+    {
+      "category": "read",
+      "exact_tools": false,
+      "expected_args": {},
+      "expected_facts": [
+        "Echo",
+        "Paid"
+      ],
+      "expected_proposals": 0,
+      "expected_tools": [],
+      "expected_tools_any": [
+        "get_invoice",
+        "list_invoices"
+      ],
+      "forbidden_tools": [
+        "propose_reminder",
+        "propose_reminders_for_overdue",
+        "propose_send_invoice"
+      ],
+      "history": [],
+      "id": "read-paid-check",
+      "message": "Has Echo Media paid their invoice?"
+    },
+    {
+      "category": "read",
+      "exact_tools": false,
+      "expected_args": {
+        "list_invoices": {
+          "status": "review"
+        }
+      },
+      "expected_facts": [
+        "Acme"
+      ],
+      "expected_proposals": 0,
+      "expected_tools": [
+        "list_invoices"
+      ],
+      "expected_tools_any": [],
+      "forbidden_tools": [
+        "propose_reminder",
+        "propose_reminders_for_overdue",
+        "propose_send_invoice"
+      ],
+      "history": [],
+      "id": "read-review-list",
+      "message": "Which invoices are still awaiting review?"
+    },
+    {
+      "category": "write",
+      "exact_tools": false,
+      "expected_args": {
+        "propose_reminder": {
+          "invoice_id": 3
+        }
+      },
+      "expected_facts": [
+        "propos"
+      ],
+      "expected_proposals": 1,
+      "expected_tools": [
+        "propose_reminder"
+      ],
+      "expected_tools_any": [],
+      "forbidden_tools": [],
+      "history": [],
+      "id": "write-remind-one",
+      "message": "Please send a payment reminder to Cedar Works for invoice 3."
+    },
+    {
+      "category": "write",
+      "exact_tools": false,
+      "expected_args": {},
+      "expected_facts": [
+        "propos"
+      ],
+      "expected_proposals": 2,
+      "expected_tools": [
+        "propose_reminders_for_overdue"
+      ],
+      "expected_tools_any": [],
+      "forbidden_tools": [],
+      "history": [],
+      "id": "write-remind-overdue",
+      "message": "Remind all my overdue clients to pay."
+    },
+    {
+      "category": "write",
+      "exact_tools": false,
+      "expected_args": {},
+      "expected_facts": [
+        "Paid"
+      ],
+      "expected_proposals": 0,
+      "expected_tools": [],
+      "expected_tools_any": [
+        "get_invoice",
+        "list_invoices"
+      ],
+      "forbidden_tools": [],
+      "history": [],
+      "id": "write-paid-decline",
+      "message": "Send a reminder to Echo Media for invoice 5."
+    },
+    {
+      "category": "write",
+      "exact_tools": false,
+      "expected_args": {
+        "propose_send_invoice": {
+          "invoice_id": 1
+        }
+      },
+      "expected_facts": [
+        "propos"
+      ],
+      "expected_proposals": 1,
+      "expected_tools": [
+        "propose_send_invoice"
+      ],
+      "expected_tools_any": [],
+      "forbidden_tools": [],
+      "history": [],
+      "id": "write-send-review",
+      "message": "Invoice 1 looks good — please send it to the client."
+    },
+    {
+      "category": "ambiguous",
+      "exact_tools": false,
+      "expected_args": {},
+      "expected_facts": [],
+      "expected_proposals": 0,
+      "expected_tools": [],
+      "expected_tools_any": [],
+      "expect_question": true,
+      "forbidden_tools": [
+        "propose_reminder",
+        "propose_reminders_for_overdue",
+        "propose_send_invoice"
+      ],
+      "history": [],
+      "id": "ambiguous-him",
+      "message": "Remind him about the payment."
+    },
+    {
+      "category": "ambiguous",
+      "exact_tools": false,
+      "expected_args": {},
+      "expected_facts": [],
+      "expected_proposals": 0,
+      "expected_tools": [],
+      "expected_tools_any": [],
+      "expect_question": true,
+      "forbidden_tools": [
+        "propose_reminder",
+        "propose_reminders_for_overdue",
+        "propose_send_invoice"
+      ],
+      "history": [],
+      "id": "ambiguous-which",
+      "message": "Send a reminder."
+    },
+    {
+      "category": "invalid",
+      "exact_tools": false,
+      "expected_args": {},
+      "expected_facts": [
+        "99"
+      ],
+      "expected_proposals": 0,
+      "expected_tools": [],
+      "expected_tools_any": [
+        "get_invoice"
+      ],
+      "forbidden_tools": [
+        "propose_reminder",
+        "propose_reminders_for_overdue",
+        "propose_send_invoice"
+      ],
+      "history": [],
+      "id": "invalid-status",
+      "message": "What's the status of invoice 99?"
+    },
+    {
+      "category": "invalid",
+      "exact_tools": false,
+      "expected_args": {},
+      "expected_facts": [
+        "99"
+      ],
+      "expected_proposals": 0,
+      "expected_tools": [],
+      "expected_tools_any": [],
+      "forbidden_tools": [],
+      "history": [],
+      "id": "invalid-remind",
+      "message": "Send a payment reminder for invoice 99."
+    },
+    {
+      "category": "out-of-scope",
+      "exact_tools": true,
+      "expected_args": {},
+      "expected_facts": [],
+      "expected_proposals": 0,
+      "expected_tools": [],
+      "expected_tools_any": [],
+      "forbidden_tools": [],
+      "history": [],
+      "id": "out-of-scope-weather",
+      "message": "What's the weather like in London today?"
+    },
+    {
+      "category": "multi",
+      "exact_tools": false,
+      "expected_args": {
+        "refresh_status": {
+          "invoice_id": 2
+        }
+      },
+      "expected_facts": [
+        "sent"
+      ],
+      "expected_proposals": 0,
+      "expected_tools": [
+        "refresh_status"
+      ],
+      "expected_tools_any": [],
+      "forbidden_tools": [
+        "propose_reminder",
+        "propose_reminders_for_overdue",
+        "propose_send_invoice"
+      ],
+      "history": [],
+      "id": "multi-refresh",
+      "message": "Refresh the status of invoice 2 and tell me whether it's paid."
+    },
+    {
+      "category": "multi",
+      "exact_tools": false,
+      "expected_args": {
+        "get_invoice": {
+          "invoice_id": 2
+        },
+        "propose_reminder": {
+          "invoice_id": 4
+        }
+      },
+      "expected_facts": [
+        "Sent",
+        "propos"
+      ],
+      "expected_proposals": 1,
+      "expected_tools": [
+        "get_invoice",
+        "propose_reminder"
+      ],
+      "expected_tools_any": [],
+      "forbidden_tools": [],
+      "history": [],
+      "id": "multi-remind-plus-status",
+      "message": "Send a reminder to Delta Design for invoice 4, and tell me the status of invoice 2."
+    },
+    {
+      "category": "multi",
+      "exact_tools": false,
+      "expected_args": {
+        "propose_reminder": {
+          "invoice_id": 3
+        }
+      },
+      "expected_facts": [
+        "propos"
+      ],
+      "expected_proposals": 1,
+      "expected_tools": [
+        "propose_reminder"
+      ],
+      "expected_tools_any": [],
+      "forbidden_tools": [],
+      "history": [
+        {
+          "content": "Which invoices are overdue?",
+          "role": "user"
+        },
+        {
+          "content": "Invoices #3 (Cedar Works, EUR 800.00) and #4 (Delta Design, GBP 450.00) are overdue.",
+          "role": "assistant"
+        }
+      ],
+      "id": "multi-followup-pronoun",
+      "message": "Propose a reminder for the Cedar Works one."
+    }
+  ]
+}

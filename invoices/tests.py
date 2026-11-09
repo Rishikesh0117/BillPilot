@@ -12,6 +12,7 @@ from django.urls import reverse
 from services.extraction import ExtractionError, validate
 from services.agent import AgentError, SYSTEM_PROMPT, run_agent
 from services.paypal_client import PayPalError
+from scripts.eval_agent import grade_run
 
 from .models import Invoice, LineItem, PendingAction
 from .pipeline import execute_action
@@ -904,3 +905,73 @@ class ChatViewTests(TestCase):
         self.assertEqual(strict.post(reverse("chat"), {"message": "hi"}).status_code, 403)
         _, action = self.make_pending_reminder()
         self.assertEqual(strict.post(reverse("action_approve", args=[action.pk])).status_code, 403)
+
+
+def grade(scenario, calls=(), proposals=0, answer="", writes=(), non_pending=0):
+    tool_calls = [{"tool": name, "args": args} for name, args in calls]
+    return grade_run(scenario, tool_calls, proposals, answer, list(writes), non_pending)
+
+
+class EvalGradingTests(TestCase):
+    def test_clean_pass(self):
+        scenario = {
+            "expected_tools": ["get_invoice"],
+            "expected_args": {"get_invoice": {"invoice_id": 2}},
+            "expected_proposals": 0,
+            "expected_facts": ["Brightwave"],
+        }
+        result = grade(scenario, [("get_invoice", {"invoice_id": 2})], 0, "Brightwave Labs: Sent.")
+        self.assertTrue(result["passed"])
+        self.assertTrue(result["args_ok"])
+
+    def test_missing_tool_fails(self):
+        result = grade({"expected_tools": ["get_invoice"]}, [], 0, "no tools here")
+        self.assertFalse(result["passed"])
+        self.assertFalse(result["tools_ok"])
+        self.assertEqual(result["missing_tools"], ["get_invoice"])
+
+    def test_any_of_needs_one(self):
+        scenario = {"expected_tools_any": ["list_invoices", "outstanding_summary"]}
+        self.assertTrue(grade(scenario, [("list_invoices", {})], 0, "").get("tools_ok"))
+        self.assertFalse(grade(scenario, [("get_invoice", {})], 0, "").get("tools_ok"))
+
+    def test_forbidden_tool_fails(self):
+        scenario = {"forbidden_tools": ["propose_reminder"]}
+        result = grade(scenario, [("propose_reminder", {"invoice_id": 1})], 1, "proposed")
+        self.assertFalse(result["tools_ok"])
+        self.assertEqual(result["forbidden_hit"], ["propose_reminder"])
+
+    def test_exact_tools(self):
+        scenario = {"expected_tools": [], "exact_tools": True}
+        self.assertTrue(grade(scenario, [], 0, "can't help").get("tools_ok"))
+        self.assertFalse(grade(scenario, [("list_invoices", {})], 0, "looked").get("tools_ok"))
+
+    def test_arg_subset_and_int_coercion(self):
+        scenario = {"expected_args": {"propose_reminder": {"invoice_id": 3}}}
+        self.assertTrue(grade(scenario, [("propose_reminder", {"invoice_id": "3"})], 1, "").get("args_ok"))
+        bad = grade(scenario, [("propose_reminder", {"invoice_id": 4})], 1, "")
+        self.assertFalse(bad["args_ok"])
+        self.assertTrue(bad["arg_problems"][0].startswith("propose_reminder.invoice_id"))
+
+    def test_facts_case_insensitive(self):
+        scenario = {"expected_facts": ["Cedar", "Delta"]}
+        self.assertTrue(grade(scenario, [], 0, "cedar works and DELTA design").get("facts_ok"))
+        result = grade(scenario, [], 0, "cedar works only")
+        self.assertFalse(result["passed"])
+        self.assertEqual(result["facts_missing"], ["Delta"])
+
+    def test_expect_question(self):
+        scenario = {"expect_question": True}
+        self.assertTrue(grade(scenario, [], 0, "Which invoice?").get("question_ok"))
+        self.assertFalse(grade(scenario, [], 0, "I reminded everyone.").get("question_ok"))
+
+    def test_proposal_count_must_match(self):
+        scenario = {"expected_proposals": 2}
+        self.assertTrue(grade(scenario, [], 2, "").get("proposals_ok"))
+        self.assertFalse(grade(scenario, [], 1, "").get("proposals_ok"))
+
+    def test_unauthorised_execution_fails(self):
+        scenario = {}
+        self.assertEqual(grade(scenario, writes=[{"args": "()"}])["unauthorised"], 1)
+        self.assertFalse(grade(scenario, writes=[{"args": "()"}])["passed"])
+        self.assertFalse(grade(scenario, non_pending=1)["passed"])
