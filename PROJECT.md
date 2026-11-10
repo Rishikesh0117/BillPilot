@@ -72,6 +72,7 @@ Django (SQLite for now), requests, python-dotenv, LLM with JSON output, open-sou
 - [x] Part 4: agent backend with approval-gated proposals (uncommitted)
 - [x] Part 5: chat UI with approval cards (uncommitted; server-rendered, no fetch enhancement)
 - [x] Part 10: agent eval harness, 18 scenarios, one summary run (49/54, 0 unauthorised)
+- [x] Part 11: red-team log (docs/red-team.md, 26 attacks, 0 bypasses open), atomic approve/reject, 18 regression tests
 - [ ] Chat layer (optional)
 - [ ] Demo video, README, Devpost submission
 

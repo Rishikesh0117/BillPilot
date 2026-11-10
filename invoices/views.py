@@ -138,9 +138,12 @@ def chat(request):
         except AgentError as e:
             messages.error(request, f"Assistant error: {e}")
             return redirect("chat")
+        reply = result["message"] or (
+            "I couldn't come up with a reply just now. Could you rephrase that?"
+        )
         request.session["chat_history"] = (history + [
             {"role": "user", "content": message},
-            {"role": "assistant", "content": result["message"]},
+            {"role": "assistant", "content": reply},
         ])[-CHAT_HISTORY_LIMIT:]
         if result["proposals"]:
             messages.success(request, f"{len(result['proposals'])} proposal(s) created — review below.")
@@ -171,12 +174,14 @@ def chat(request):
 @require_POST
 def action_approve(request, pk):
     action = get_object_or_404(PendingAction.objects.select_related("invoice"), pk=pk)
-    if action.status != PendingAction.Status.PENDING:
+    # Atomic claim: two concurrent approves (double-click) must not both execute.
+    claimed = PendingAction.objects.filter(
+        pk=action.pk, status=PendingAction.Status.PENDING
+    ).update(status=PendingAction.Status.APPROVED, decided_at=timezone.now())
+    if not claimed:
         messages.error(request, "This proposal was already handled.")
         return redirect("chat")
-    action.status = PendingAction.Status.APPROVED
-    action.decided_at = timezone.now()
-    action.save(update_fields=["status", "decided_at"])
+    action.refresh_from_db()
     ok, message = execute_action(action)
     (messages.success if ok else messages.error)(request, message)
     request.session["last_decision"] = action.pk
@@ -186,12 +191,12 @@ def action_approve(request, pk):
 @require_POST
 def action_reject(request, pk):
     action = get_object_or_404(PendingAction.objects.select_related("invoice"), pk=pk)
-    if action.status != PendingAction.Status.PENDING:
+    claimed = PendingAction.objects.filter(
+        pk=action.pk, status=PendingAction.Status.PENDING
+    ).update(status=PendingAction.Status.REJECTED, decided_at=timezone.now())
+    if not claimed:
         messages.error(request, "This proposal was already handled.")
         return redirect("chat")
-    action.status = PendingAction.Status.REJECTED
-    action.decided_at = timezone.now()
-    action.save(update_fields=["status", "decided_at"])
     messages.success(request, "Proposal rejected. Nothing was sent.")
     request.session["last_decision"] = action.pk
     return redirect("chat")
