@@ -88,7 +88,7 @@ python scripts/eval_extraction.py --model <ID>  # eval with a different model
 python scripts/generate_samples.py            # rebuild the sample PDFs + expected.json
 ```
 
-Latest extraction eval (Nov 6): **9/9 documents perfect (100%)**, ~3.7 s per document, 33 s total. Samples cover tax/discount lines, vendor-vs-client email disambiguation, ordinal dates ("5th Nov 2026"), bare `$` symbols, decimal quantities, and a two-page layout with a long description. For private real-document checks without committing the files: put PDFs + `expected.json` in `samples_private/` (gitignored) and run `python scripts/eval_extraction.py --samples-dir samples_private`.
+Latest extraction eval : **9/9 documents perfect (100%)**, ~3.7 s per document, 33 s total. Samples cover tax/discount lines, vendor-vs-client email disambiguation, ordinal dates , bare `$` symbols, decimal quantities, and a two-page layout with a long description. For private real-document checks without committing the files: put PDFs + `expected.json` in `samples_private/` (gitignored) and run `python scripts/eval_extraction.py --samples-dir samples_private`.
 
 ## Project structure
 
