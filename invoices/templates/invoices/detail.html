@@ -35,7 +35,6 @@
   <dl>
     <dt>Invoice ID</dt><dd>{{ invoice.paypal_invoice_id }}</dd>
     <dt>Status</dt><dd><span class="badge {{ invoice.paypal_status|lower }}">{{ invoice.paypal_status|default:"—" }}</span></dd>
-    {% if invoice.payer_url %}<dt>Customer link</dt><dd><a href="{{ invoice.payer_url }}" target="_blank" rel="noopener">View invoice as the customer</a></dd>{% endif %}
   </dl>
   <form method="post" action="{% url 'invoice_refresh' invoice.pk %}" style="margin-top:14px">
     {% csrf_token %}<button class="btn" type="submit">Refresh status</button>

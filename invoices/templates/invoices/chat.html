@@ -1,4 +1,5 @@
 {% extends "invoices/base.html" %}
+{% load chat_markdown %}
 {% block title %}Assistant · BillPilot{% endblock %}
 {% block content %}
 <style>
@@ -8,6 +9,10 @@
   .msg { max-width:85%; padding:10px 14px; border-radius:12px; white-space:pre-wrap; }
   .msg.user { align-self:flex-end; background:#e0f2fe; color:#0c4a6e; }
   .msg.assistant { align-self:flex-start; background:#eef2f6; color:#1d2433; }
+  .msg table { width:100%; border-collapse:collapse; margin:8px 0; font-size:14px; }
+  .msg th, .msg td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
+  .msg th { font-size:12px; color:var(--muted); font-weight:600; }
+  .msg code { background:rgba(0,0,0,.06); padding:1px 5px; border-radius:4px; font-size:13px; }
   .suggest { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 16px; }
   .suggest form { margin:0; }
   textarea { width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; font:inherit; background:#fff; color:var(--text); }
@@ -26,7 +31,7 @@
   {% if history %}
   <div class="thread">
     {% for m in history %}
-    <div class="msg {{ m.role }}">{{ m.content }}</div>
+    <div class="msg {{ m.role }}">{{ m.content|chat_markdown }}</div>
     {% endfor %}
   </div>
   {% else %}

@@ -14,10 +14,12 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from services.agent import DEFAULT_REGISTRY, SYSTEM_PROMPT, _dispatch, _schema, run_agent
+from services.fx import FXError
 from services.ocr import extract_text
 
 from invoices.models import Invoice, PendingAction
 from invoices.pipeline import execute_action
+from invoices.templatetags.chat_markdown import chat_markdown
 from invoices.tests import add_item, make_invoice, text_reply, tool_reply
 
 HOSTILE = (
@@ -80,6 +82,7 @@ class RedTeamTests(TestCase):
                 ("get_invoice", {"invoice_id": inv.pk}),
                 ("refresh_status", {"invoice_id": inv.pk}),
                 ("outstanding_summary", {}),
+                ("convert_currency", {"amount": 10, "from_currency": "EUR", "to_currency": "USD"}),
                 ("propose_reminder", {"invoice_id": inv.pk}),
                 ("propose_reminders_for_overdue", {}),
                 ("propose_send_invoice", {"invoice_id": review.pk}),
@@ -89,7 +92,8 @@ class RedTeamTests(TestCase):
         ]):
             with patch("invoices.pipeline.paypal_client") as pp:
                 pp.get_status.return_value = "SENT"
-                result = run_agent([{"role": "user", "content": "Do everything."}])
+                with patch("services.agent.convert", return_value={"converted": 1}):
+                    result = run_agent([{"role": "user", "content": "Do everything."}])
         self.assertEqual(result["message"], "done")
         self.assertTrue(result["proposals"])
         self.assertEqual(
@@ -308,3 +312,93 @@ class RedTeamTests(TestCase):
         self.assertEqual(strict.post(reverse("action_reject", args=[action.pk])).status_code, 403)
         action.refresh_from_db()
         self.assertEqual(action.status, PendingAction.Status.PENDING)
+
+
+class FXToolTests(TestCase):
+    def test_convert_currency_tool_uses_live_rates(self):
+        with patch("services.agent.convert", return_value={
+                "amount": 800.0, "from": "EUR", "to": "USD",
+                "rate": 1.1149, "converted": 891.94}) as conv:
+            text, new = _dispatch(_call("convert_currency", {
+                "amount": 800, "from_currency": "EUR", "to_currency": "USD"}),
+                DEFAULT_REGISTRY)
+        conv.assert_called_once_with(800, "EUR", "USD")
+        self.assertEqual(json.loads(text)["converted"], 891.94)
+        self.assertEqual(new, [])
+
+    def test_convert_currency_rejects_bad_input(self):
+        cases = [
+            {"amount": "lots", "from_currency": "EUR", "to_currency": "USD"},
+            {"amount": -5, "from_currency": "EUR", "to_currency": "USD"},
+            {"amount": 10, "from_currency": "EU", "to_currency": "USD"},
+            {"amount": 10, "from_currency": "EUR", "to_currency": ""},
+            {},
+        ]
+        for args in cases:
+            text, new = _dispatch(_call("convert_currency", args), DEFAULT_REGISTRY)
+            self.assertTrue(text.startswith("Error:"), f"{args} gave: {text!r}")
+            self.assertEqual(new, [])
+
+    def test_convert_currency_handles_rate_failure(self):
+        with patch("services.agent.convert", side_effect=FXError("service down")):
+            text, new = _dispatch(_call("convert_currency", {
+                "amount": 10, "from_currency": "EUR", "to_currency": "USD"}),
+                DEFAULT_REGISTRY)
+        self.assertIn("service down", text)
+        self.assertEqual(new, [])
+
+    def test_agent_can_answer_conversion_question(self):
+        inv = make_invoice()
+        add_item(inv, unit_price=200.0)
+        with patch("services.agent._call_chat", side_effect=[
+            tool_reply(
+                ("outstanding_summary", {}),
+                ("convert_currency", {"amount": 200, "from_currency": "USD",
+                                      "to_currency": "USD"}),
+            ),
+            text_reply("Total \u2248 USD 200.00."),
+        ]):
+            with patch("invoices.pipeline.paypal_client") as pp:
+                result = run_agent([{"role": "user", "content": "Total in USD?"}])
+        self.assertEqual(result["message"], "Total \u2248 USD 200.00.")
+        self.assertEqual(result["proposals"], [])
+        pp.send_reminder.assert_not_called()
+
+
+class ChatMarkdownTests(TestCase):
+    def test_table_renders(self):
+        html = chat_markdown("| ID | Client |\n|---|---|\n| 11 | Aroma |")
+        self.assertIn("<table>", html)
+        self.assertIn("<th>ID</th>", html)
+        self.assertIn("<td>11</td>", html)
+        self.assertIn("<td>Aroma</td>", html)
+
+    def test_alignment_markers(self):
+        html = chat_markdown("| A | B |\n|--:|:--|\n| 1 | 2 |")
+        self.assertIn('<th style="text-align:right">A</th>', html)
+        self.assertIn("<th>B</th>", html)
+
+    def test_plain_text_and_escapes(self):
+        self.assertEqual(chat_markdown("a\nb"), "a\nb")
+        self.assertIn("&lt;script&gt;", chat_markdown("<script>alert(1)</script>"))
+
+    def test_bold_and_code(self):
+        html = chat_markdown("**all** invoices and `USD`")
+        self.assertIn("<strong>all</strong>", html)
+        self.assertIn("<code>USD</code>", html)
+
+    def test_malformed_table_stays_text(self):
+        html = chat_markdown("| a | b |\n| c | d |")
+        self.assertNotIn("<table>", html)
+        self.assertIn("| a | b |", html)
+
+    def test_chat_view_renders_table(self):
+        session = self.client.session
+        session["chat_history"] = [
+            {"role": "user", "content": "Overdue?"},
+            {"role": "assistant", "content": "Here:\n| ID |\n|---|\n| 11 |"},
+        ]
+        session.save()
+        resp = self.client.get(reverse("chat"))
+        self.assertContains(resp, "<table>")
+        self.assertContains(resp, "<td>11</td>")

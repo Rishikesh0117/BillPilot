@@ -55,7 +55,7 @@ Django (SQLite for now), requests, python-dotenv, LLM with JSON output, open-sou
 ## Currency conversion (spike, Nov 9, uncommitted)
 - PayPal has no usable FX endpoint for us: Currency Exchange v2 (`/v2/pricing/quote-exchange-rates`) is limited-release, approval-gated, built for Orders-checkout pricing — not invoice math.
 - Instead: `services/fx.py` converts at live daily rates from the free no-key endpoint `open.er-api.com` (24h in-memory cache); mocked unit tests in `FXTests`, live-checked (800 EUR → 891.94 USD).
-- Not yet wired to any UI or agent tool. Natural next step: a read-only `convert_currency` agent tool so the assistant can answer "what's outstanding in USD?".
+- Wired as a read-only `convert_currency` agent tool (live daily rates, 24h cache); the assistant converts instead of asking the user for rates.
 
 ## Status
 - [x] Sandbox app, invoicing scope, test invoice created, sent, paid, status read

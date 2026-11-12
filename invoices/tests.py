@@ -223,7 +223,7 @@ class SendTests(TestCase):
         self.assertEqual(self.invoice.paypal_invoice_id, "INV2-ABC")
         self.assertEqual(self.invoice.payer_url, "https://sandbox.paypal.com/invoice/p/#INV2-ABC")
         self.assertContains(resp, "Invoice sent to PayPal")
-        self.assertContains(resp, "View invoice as the customer")
+        self.assertNotContains(resp, "View invoice as the customer")
 
     @patch("invoices.pipeline.paypal_client")
     def test_edits_are_saved_before_sending(self, pp):

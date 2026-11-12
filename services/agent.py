@@ -24,6 +24,7 @@ import requests
 
 from invoices.models import FINAL_STATUSES, Invoice, PendingAction
 from invoices.pipeline import REMINDABLE_STATUSES, refresh_status
+from services.fx import FXError, convert
 
 TIMEOUT = 90
 MAX_ITERATIONS = 5
@@ -38,6 +39,7 @@ You have tools to look up invoice data and to PROPOSE actions. Rules:
 - Read tools run immediately. Write tools (propose_*) only create proposals: a human reviews and approves each one before anything is sent. You can never send anything directly.
 - Propose, never claim you sent something. Say "I've proposed ..." not "I've sent ...". Only state something was sent if the user approved it and you see the result.
 - Never invent invoice IDs, amounts, or statuses: always look them up with the tools first.
+- You can convert money at today's live market rate with convert_currency; use it whenever the user asks for totals in another currency instead of asking them for a rate.
 - Scope: invoices, clients, and payments only. Anything else — coding, homework, general questions — gets a brief decline plus an offer to help with invoices. Never write code, essays, or general how-tos.
 - Be concise. Format money like USD 1,650.00. When a request is ambiguous (which invoice?), ask."""
 
@@ -219,6 +221,14 @@ def _get_or_create_reminder(invoice, note):
     return action, True
 
 
+def _convert_currency(args):
+    try:
+        result = convert(args.get("amount"), args.get("from_currency"), args.get("to_currency"))
+    except FXError as e:
+        raise AgentToolError(str(e)) from e
+    return json.dumps(result), []
+
+
 def _propose_reminder(args):
     invoice = _require_invoice(args)
     if invoice.state != Invoice.State.SENT or not invoice.paypal_invoice_id:
@@ -311,6 +321,20 @@ DEFAULT_REGISTRY = {
             "Counts and totals by currency for unpaid and overdue invoices.",
             {"type": "object", "properties": {}},
             _outstanding_summary,
+        ),
+        Tool(
+            "convert_currency",
+            "Convert an amount between currencies at today's live market rate (cached daily).",
+            {
+                "type": "object",
+                "properties": {
+                    "amount": {"type": "number", "description": "Amount to convert."},
+                    "from_currency": {"type": "string", "description": "3-letter code, e.g. EUR."},
+                    "to_currency": {"type": "string", "description": "3-letter code, e.g. USD."},
+                },
+                "required": ["amount", "from_currency", "to_currency"],
+            },
+            _convert_currency,
         ),
         Tool(
             "propose_reminder",
